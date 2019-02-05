@@ -1,0 +1,533 @@
+import controlP5.*;
+import websockets.*;
+import processing.serial.*;
+
+import java.util.*;
+import javax.swing.JOptionPane;
+import java.awt.FileDialog;
+
+// ========= PREFERENCES ========= //
+
+// these are default values, they will be replaced
+// by what is defined in preferences.txt
+
+// raspberry pi mode = autostart chrome, autoselect serial port.
+boolean piMode = true;
+String arduinoPort = "/dev/ttyACM0";
+String dataPath = "/home/pi/CT1LN/data/";
+
+int windowWidth = 1024;
+int windowHeight = 768;
+int exportWidth = 3500; // image size for high-res export
+boolean loadHighRes = true; // for export only
+int fadeSpeed = 15;
+int columns = 4;
+int rows = 3;
+float xMargin = 0.05; // percentage of total width
+float yMargin = 0.04; // percentage of total width
+float padding = 0.1;  // percentage of photoWidth
+
+// ========= VARS ========= //
+
+// Visuals
+PGraphics imgBuffer;
+int fade = 0;
+float photoWidth;
+float xm, ym, xs, ys;
+
+// Metadata Tables
+int numImages;       // total number of images in collection
+String[] filenames;  // ID = index
+String[] tags;       // all unique tags 
+ArrayList<int[]> associations; // associations[i] = list of IDs associated with tags[i]
+
+// Search
+StringList searchTerms = new StringList();
+IntList imageIDs = new IntList(); // all search results
+PImage images[] = new PImage[rows * columns]; // images to render
+int page; // for handling multi-page results.
+int numPages; // total number of pages for search result
+boolean newSearch = false;
+boolean refineSearch = false;
+
+// Comms
+WebsocketServer ws;
+Serial arduino;
+boolean ready = false;
+
+// GUI
+ControlP5 cp5;
+PFont font;
+Textlabel searchLabel;
+boolean showFrames = false;
+boolean showImages = true;
+boolean refresh = false;
+
+// Print Quality Export
+int exportHeight;
+boolean export = false;
+PGraphics exportRender;
+
+
+void settings() {
+  size(windowWidth, windowHeight);
+}
+
+
+void setup() {
+
+  loadPreferences();
+
+  if(piMode) surface.setAlwaysOnTop(true);
+
+  imgBuffer = createGraphics(width, height);
+
+  ws= new WebsocketServer(this,8080,"/ct1ln");
+  
+  if(piMode) {
+    println("connecting arduino on " + arduinoPort);
+    arduino = new Serial(this, arduinoPort, 9600);
+    arduino.bufferUntil('\n');
+  } else {
+    selectFolder("where is the database?", "selectDataPath");
+    if(Serial.list().length > 0) {
+      arduinoPort = (String) JOptionPane.showInputDialog(
+        null, 
+        "which port for arduino?", 
+        "select port", 
+        JOptionPane.PLAIN_MESSAGE, 
+        null, 
+        Serial.list(), 
+        Serial.list()[Serial.list().length-1]
+      );
+      println("connecting arduino on " + arduinoPort);
+      try {
+        arduino = new Serial(this, arduinoPort, 9600);
+        arduino.bufferUntil('\n');
+      }
+      catch(Exception e) {
+        println("no arduino connected");
+      }
+    } else {
+      println("no arduino connected");
+    }
+  }
+
+  cp5 = new ControlP5(this);
+  font = loadFont(dataPath + "NotoSans-12.vlw");
+  cp5.setFont(font);
+  cp5.addTextfield("search").setPosition(20, height-40).getCaptionLabel().setVisible(false);   
+  searchLabel = cp5.addTextlabel("searchLabel").setText("").setPosition(20, height-60);
+  searchLabel.setText("loading...");
+
+  exportHeight = int(exportWidth*height/width);
+
+  String[] metadata = loadStrings(dataPath + "metadados.csv");
+
+  numImages = metadata.length-1; // subtract the header
+  filenames = new String[numImages+1]; // add an extra (empty) element so IDs match the array index;
+  tags = new String[0];
+  associations = new ArrayList<int[]>();  
+  
+  parseMetadata(metadata);
+  makeUnaccentedTags();
+
+  // print the tables
+  println();
+  for (int i=0; i<tags.length; i++) {
+    print(tags[i] + ": " );
+    int[] list = associations.get(i);
+    for (int h=0; h<list.length; h++) {
+      print(list[h] + ",");
+    }
+    print(byte(8));  // backspace char to remove last comma B-)
+    println();
+  }
+  println();
+  
+  xm = xMargin*width;
+  ym = yMargin*width;
+  xs = (width - 2*xm)/columns;
+  ys = (height - 2*ym)/rows;
+  photoWidth = xs * (1-padding);
+
+  println("photoWidth = " + photoWidth);
+
+  if(piMode) exec("chromium-browser");
+
+  println();
+}
+
+
+void draw() {
+
+  background(0);
+
+  // for export
+  if(export) {
+    println("exporting...");    
+    exportRender = createGraphics(exportWidth, exportHeight);
+    exportRender.beginDraw();
+    exportRender.background(0); 
+    exportRender.imageMode(CENTER);
+
+    if(loadHighRes) {
+      loadImages(true);
+    } else {
+      loadImages(false);
+    }
+
+    drawImages(exportRender, true);
+
+    exportRender.endDraw();
+    String f = "export_"+nf(month(),2)+nf(day(),2)+nf(hour(),2)+nf(minute(),2)+nf(second(),2)+".jpg";
+    exportRender.save(dataPath + f);
+    println("saved " + dataPath + f);
+    export = false;
+  }
+
+  imageMode(CORNER);
+  image(imgBuffer,0,0);
+
+  // handle fade out/in
+  if (refresh) {
+    noStroke();
+    rectMode(CORNER);
+    fill(0, fade);
+    rect(0, 0, width, height);
+    fade += fadeSpeed;
+    if (fade > 255) {
+      fade = 255; 
+      if(newSearch) {
+        if(refineSearch)
+          getIDs(searchTerms.get(searchTerms.size()-1), false);
+        else
+          getIDs(searchTerms.get(0), true); 
+        newSearch = false;
+      }
+      loadImages(false);
+      updateBuffer();
+      if(imageIDs.size() > 0 )
+        searchLabel.setText(allSearchTerms() + page + " of " + numPages + " (" + imageIDs.size() + ")");
+      else
+        searchLabel.setText(allSearchTerms() + "(no results)");
+      refresh = false;
+    }
+  } else if (fade > 0) {
+    noStroke();
+    rectMode(CORNER);
+    fill(0, (int)fade);
+    rect(0, 0, width, height);
+    fade -= fadeSpeed;
+  }
+  
+}
+
+
+void getIDs(String tag, boolean cleanSearch) {
+
+  // find tag index
+  int tagIndex;
+  
+  for (tagIndex=0; tagIndex<tags.length; tagIndex++) {
+    if (tag.equals(tags[tagIndex])) {
+      break;
+    }
+  }
+
+  // if a tag was found
+  if (tagIndex < tags.length) {
+    
+    println("tagIndex = " + tagIndex);
+
+    // get an array of ID's for selected tag  
+    int[] tagResults = associations.get(tagIndex);
+
+    if(cleanSearch) {
+      // if a fresh new search, clear the intlist, and fill with tagResults IDs
+      imageIDs.clear();
+      for(int i=0; i<tagResults.length; i++) {
+        imageIDs.append(tagResults[i]);
+      }
+
+    } else {
+      // otherwise it is a refined search, in which case remove all ids that are not in tagResults array
+
+      IntList filteredIDs = new IntList();  
+
+      for(int i=0; i<tagResults.length; i++) {
+        if(imageIDs.hasValue(tagResults[i])) {
+          filteredIDs.append(tagResults[i]);
+        }
+      }
+
+      imageIDs = filteredIDs;
+    }
+
+    imageIDs.shuffle(); // randomise image order.
+    numPages = ceil( (float)imageIDs.size() / (rows*columns) );
+    page = 1;
+    println("found " + imageIDs.size() + " images, for " + numPages + " pages" + '\n');
+
+  } else {
+    // otherwise if no tag was found
+    //numResults = 0;
+    imageIDs.clear();
+    numPages = 0;
+    println("tag not found" + '\n');
+  }
+  
+}
+
+void loadImages(boolean highRes) {
+
+  for(int i=0; i<imagesOnScreen(); i++) {
+    int id = imageIDs.get(i + (page-1)*rows*columns);
+    if(highRes) {
+      println("loading image " + (i+1));
+      images[i] = loadImage(dataPath + "image_highres/" + filenames[id] + ".JPG");
+    } else {
+      images[i] = loadImage(dataPath + "images_lowres/" + filenames[id] + ".JPG");
+    }
+  }    
+
+}
+
+
+void updateBuffer(){
+
+  imgBuffer.beginDraw();
+  imgBuffer.background(0);
+  
+  // draw page margins
+  if(showFrames) {
+    imgBuffer.stroke(0,255,0);
+    imgBuffer.noFill();
+    imgBuffer.rectMode(CENTER);
+    imgBuffer.rect(width/2, height/2, width - 2*xm, height - 2*ym);
+  }  
+  
+  // draw the images  
+  drawImages(imgBuffer, false);
+  imgBuffer.endDraw();
+
+}
+
+
+void drawImages(PGraphics g, boolean forExport) {
+
+
+  g.imageMode(CENTER);
+
+  for(int i=0; i<imagesOnScreen(); i++) {
+    
+    float r = (float)images[0].height/(float)images[0].width;
+      
+    float x = i%columns*xs + xm + xs/2;
+    float y = ceil(i/columns)*ys + ym + ys/2;
+    
+    if(forExport) {
+      float s = (float)exportWidth/(float)width;
+      g.image(images[i], x*s, y*s, photoWidth*s, photoWidth*r*s);
+    } else {
+      if(showImages) {
+        g.image(images[i], x, y, photoWidth, photoWidth*r);
+      }
+      if(showFrames) {
+        g.stroke(0,0,255);
+        g.noFill();
+        g.rectMode(CENTER);
+        g.rect(x, y, xs, ys);
+        g.stroke(255,0,0);
+        g.rect(x, y, photoWidth, photoWidth*r);
+      }
+    }  
+  }
+}
+
+
+int imagesOnScreen() {
+  int i;
+  int a = imageIDs.size();
+  int b = rows*columns;
+  if(numPages<=1 || page == numPages) {
+    i = a%b;
+    if(i==0 && a>0) i=b;
+  } else {
+    i = b;
+  }
+  return i;
+}
+
+void webSocketServerEvent(String msg){
+  //println(msg);
+  delay(100);
+  if(!ready && msg.equals("ready")) {
+    ready = true;
+    searchLabel.setText("ready");
+  } else if (ready) {
+    search(msg);
+  }
+}
+
+void randomSearch() {
+  int i = (int)random(1, tags.length);
+  search(tags[i]);
+}
+
+void search(String searchString) {
+  searchString = searchString.toLowerCase();
+  searchString = searchString.trim();
+  if(refineSearch) {
+    if(imageIDs.size() == 0) {
+      searchTerms.remove(searchTerms.size()-1);
+    }
+    searchTerms.append(searchString);
+  } else {
+    searchTerms.clear();
+    searchTerms.append(searchString);    
+  }
+  println(searchString);
+  refresh = true;
+  searchLabel.setText(allSearchTerms() + "(searching...)");
+  newSearch = true;
+}
+ 
+String allSearchTerms() {
+  String a = "";
+  for(int i=0; i<searchTerms.size(); i++) {
+    a += searchTerms.get(i);
+    a += ", ";
+  }
+  return a;
+}
+
+ 
+void keyPressed() {
+ 
+  if(!cp5.get(Textfield.class,"search").isFocus()) {
+    if(key == 'r') randomSearch();
+    if(key == 'e') export = true;
+    if(key == 'f') {
+      showFrames = !showFrames;
+      updateBuffer();
+    }
+    if(key == 'i') {
+      showImages = !showImages;
+      updateBuffer();
+    }
+    if(key == 'c') {
+      refineSearch = !refineSearch;
+      println("refineSearch = " + refineSearch + '\n');
+      setTextboxColor();
+    }
+    if(key == 'g') {
+      cp5.get(Textfield.class,"search").setVisible(!cp5.get(Textfield.class,"search").isVisible());
+      searchLabel.setVisible(!searchLabel.isVisible());
+    }
+    if(!refresh) {
+      if(key == CODED) {
+        if(keyCode == RIGHT) {
+          pageRight();
+        }
+        if(keyCode == LEFT) {
+          pageLeft();
+        }
+      }
+      if(key == ' ') {
+        ws.sendMessage("start");
+        cp5.setColorBackground(color(#6F0108));  // red textbox
+      }
+    }
+    
+    if(key == 'h') { // print help
+      println(
+        "space - hold to listen" + '\n' +
+        "c - toggle refine search lock" + '\n' +
+        "r - random search" + '\n' +
+        "e - export" + '\n' +
+        "f - toggle image frames" + '\n' +
+        "i - toggle images" + '\n' +
+        "g - toggle search box" + '\n'
+      );
+    }
+      
+  }
+  
+}
+
+void keyReleased(){
+  if(key == ' ') {
+    ws.sendMessage("stop");
+    setTextboxColor();
+  }  
+}
+
+void pageRight() {
+  if(page<numPages) {
+    page++;
+    refresh = true;
+  }
+}
+
+void pageLeft() {
+  if(page>1) {
+    page--;
+    refresh = true;
+  }
+}
+
+void setTextboxColor() {
+  if(refineSearch)
+    cp5.setColorBackground(color(#015848));  // green textbox
+  else {
+    cp5.setColorBackground(color(#01336F));  // blue textbox
+  }
+}
+
+void serialEvent(Serial port) {
+
+  String s = port.readStringUntil('\n');
+  
+  if (s != null) {
+    switch(s.charAt(0)) {
+      case 'L':
+        if(s.charAt(1) == 'E') { // new search
+          refineSearch = true;
+        }
+        if(s.charAt(1) == 'D') { // refine search
+          refineSearch = false;          
+        }
+        setTextboxColor();
+        break;      
+      case 'S':
+        if(s.charAt(1) == 'E') { // start listening
+          ws.sendMessage("start");
+          cp5.setColorBackground(color(#6F0108));
+        }
+        if(s.charAt(1) == 'D') { // stop listening
+          ws.sendMessage("stop");
+          setTextboxColor();
+        }
+        break;
+      case '<':
+        pageLeft();
+        break;
+      case '>':
+        pageRight();
+        break;
+    }
+  }
+  
+}
+
+
+void selectDataPath(File selection) {
+  if (selection == null) {
+    println("no path selected for database.");
+    exit();
+  } else {
+    dataPath = selection.getAbsolutePath() + "/";
+    println("loading database from " + dataPath);
+  }
+}

@@ -1,0 +1,24 @@
+
+// enable raspberry pi mode (autostart chrome, autoselect serial port and database folder)
+piMode=0
+arduinoPort="/dev/ttyACM0"
+dataPath="/home/pi/CT1LN/data/"
+
+windowWidth=1024
+windowHeight=768
+
+// image size for high-res export
+exportWidth=3500
+// enable loading high-res source images for export
+loadHighRes=1
+
+fadeSpeed=15
+columns=4
+rows=3
+
+// margins are percentage of total width
+xMargin=0.05
+yMargin=0.04
+
+// padding is percentage of photoWidth
+padding=0.1
