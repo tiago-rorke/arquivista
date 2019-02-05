@@ -13,8 +13,9 @@ import java.awt.FileDialog;
 
 // raspberry pi mode = autostart chrome, autoselect serial port.
 boolean piMode = true;
+boolean alwaysOnTop = true;
 String arduinoPort = "/dev/ttyACM0";
-String dataPath = "/home/pi/CT1LN/data/";
+String dataPath = "/home/pi/arquivista_data/";
 
 int windowWidth = 1024;
 int windowHeight = 768;
@@ -44,7 +45,7 @@ ArrayList<int[]> associations; // associations[i] = list of IDs associated with 
 // Search
 StringList searchTerms = new StringList();
 IntList imageIDs = new IntList(); // all search results
-PImage images[] = new PImage[rows * columns]; // images to render
+PImage[] images; // images to render
 int page; // for handling multi-page results.
 int numPages; // total number of pages for search result
 boolean newSearch = false;
@@ -77,8 +78,9 @@ void settings() {
 void setup() {
 
   loadPreferences();
-
-  if(piMode) surface.setAlwaysOnTop(true);
+  images = new PImage[rows * columns];
+  
+  if(piMode && alwaysOnTop) surface.setAlwaysOnTop(true);
 
   imgBuffer = createGraphics(width, height);
 
@@ -195,7 +197,6 @@ void draw() {
     rectMode(CORNER);
     fill(0, fade);
     rect(0, 0, width, height);
-    fade += fadeSpeed;
     if (fade > 255) {
       fade = 255; 
       if(newSearch) {
@@ -213,6 +214,7 @@ void draw() {
         searchLabel.setText(allSearchTerms() + "(no results)");
       refresh = false;
     }
+    fade += fadeSpeed;
   } else if (fade > 0) {
     noStroke();
     rectMode(CORNER);
@@ -285,9 +287,9 @@ void loadImages(boolean highRes) {
     int id = imageIDs.get(i + (page-1)*rows*columns);
     if(highRes) {
       println("loading image " + (i+1));
-      images[i] = loadImage(dataPath + "image_highres/" + filenames[id] + ".JPG");
+      images[i] = loadImage(dataPath + "image_highres/" + filenames[id] + ".jpg");
     } else {
-      images[i] = loadImage(dataPath + "images_lowres/" + filenames[id] + ".JPG");
+      images[i] = loadImage(dataPath + "images_lowres/" + filenames[id] + ".jpg");
     }
   }    
 

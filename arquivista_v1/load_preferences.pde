@@ -1,6 +1,6 @@
 void loadPreferences() {
 
-  String data[] = loadStrings(sketchPath("preferences.txt"));
+  String data[] = loadStrings(sketchPath("/home/pi/arquivista/preferences.txt"));
   ArrayList<String> vars = new ArrayList<String>();
 
   for(int i=0; i<data.length; i++) {
@@ -15,6 +15,7 @@ void loadPreferences() {
   
   // bools
   piMode = Integer.parseInt(data[vars.indexOf("piMode")]) > 0 ? true : false;
+  alwaysOnTop = Integer.parseInt(data[vars.indexOf("alwaysOnTop")]) > 0 ? true : false;
   loadHighRes = Integer.parseInt(data[vars.indexOf("loadHighRes")]) > 0 ? true : false;
 
   // strings

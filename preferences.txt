@@ -1,8 +1,9 @@
 
 // enable raspberry pi mode (autostart chrome, autoselect serial port and database folder)
-piMode=0
-arduinoPort="/dev/ttyACM0"
-dataPath="/home/pi/CT1LN/data/"
+piMode=1
+alwaysOnTop=0
+arduinoPort=/dev/ttyACM0
+dataPath=/home/pi/arquivista_data/
 
 windowWidth=1024
 windowHeight=768
@@ -14,7 +15,7 @@ loadHighRes=1
 
 fadeSpeed=15
 columns=4
-rows=3
+rows=4
 
 // margins are percentage of total width
 xMargin=0.05
