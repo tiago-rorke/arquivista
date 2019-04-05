@@ -1,30 +1,11 @@
 
+/*
 void loadDefaults() {
 
-  // bools
-  piMode = true;
-  alwaysOnTop = false;
-  loadHighRes = true;
-
-  // strings
-  arduinoPort = "/dev/ttyACM0";
-  dataPath = "/home/pi/arquivista_data/";
-
-  // ints
-  windowWidth = 1024;
-  windowHeight = 768;
-  exportWidth = 3500;
-  fadeSpeed = 15;
-  columns = 4;
-  rows = 4;
-
-  // floats
-  xMargin = 0.05;
-  yMargin = 0.04;
-  padding = 0.1;
+  // in main .pde
 
 }
-
+*/
 
 void savePreferences() {
 
@@ -68,7 +49,7 @@ void loadPreferences() {
     parsePreferences(data);
   } else {
     println("no preferences file found, loading defaults");
-    loadDefaults();
+    //loadDefaults();
     savePreferences();
     println("saved new prefrences file");
   }

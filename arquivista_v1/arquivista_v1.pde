@@ -13,7 +13,7 @@ import java.awt.FileDialog;
 
 // raspberry pi mode = autostart chrome, autoselect serial port.
 boolean piMode = true;
-boolean alwaysOnTop = true;
+boolean alwaysOnTop = false;
 String arduinoPort = "/dev/ttyACM0";
 String dataPath = "/home/pi/arquivista_data/";
 
@@ -27,6 +27,7 @@ int rows = 3;
 float xMargin = 0.05; // percentage of total width
 float yMargin = 0.04; // percentage of total width
 float padding = 0.1;  // percentage of photoWidth
+
 
 // ========= VARS ========= //
 
