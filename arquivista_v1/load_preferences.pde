@@ -1,6 +1,82 @@
+
+void loadDefaults() {
+
+  // bools
+  piMode = true;
+  alwaysOnTop = false;
+  loadHighRes = true;
+
+  // strings
+  arduinoPort = "/dev/ttyACM0";
+  dataPath = "/home/pi/arquivista_data/";
+
+  // ints
+  windowWidth = 1024;
+  windowHeight = 768;
+  exportWidth = 3500;
+  fadeSpeed = 15;
+  columns = 4;
+  rows = 4;
+
+  // floats
+  xMargin = 0.05;
+  yMargin = 0.04;
+  padding = 0.1;
+
+}
+
+
+void savePreferences() {
+
+  String[] preferences = {
+    "// enable raspberry pi mode (autostart chrome, autoselect serial port and database folder)",
+    "piMode=" + (piMode ? 1 : 0),
+    "alwaysOnTop=" + (alwaysOnTop ? 1 : 0),
+    "arduinoPort=" + arduinoPort,
+    "dataPath=" + dataPath,
+    "",
+    "windowWidth=" + windowWidth,
+    "windowHeight=" + windowHeight,
+    "",
+    "// image size for high-res export",
+    "exportWidth=" + exportWidth,
+    "// enable loading high-res source images for export",
+    "loadHighRes=" + (loadHighRes ? 1 : 0),
+    "",
+    "fadeSpeed=" + fadeSpeed,
+    "columns=" + columns,
+    "rows=" + rows,
+    "",
+    "// margins are percentage of total width",
+    "xMargin=" + xMargin,
+    "yMargin=" + yMargin,
+    "",
+    "// padding is percentage of photoWidth",
+    "padding=" + padding
+  };
+  saveStrings("../preferences.txt", preferences);
+
+}
+
+
 void loadPreferences() {
 
-  String data[] = loadStrings(sketchPath("../preferences.txt"));
+  String data[] = new String[0];
+  File preferences = new File(sketchPath("../preferences.txt"));
+  if (preferences.exists())  {
+    data = loadStrings(preferences);
+    parsePreferences(data);
+  } else {
+    println("no preferences file found, loading defaults");
+    loadDefaults();
+    savePreferences();
+    println("saved new prefrences file");
+  }
+}
+
+
+void parsePreferences(String[] data) {
+
   ArrayList<String> vars = new ArrayList<String>();
 
   for(int i=0; i<data.length; i++) {
