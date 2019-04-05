@@ -1,6 +1,6 @@
 void loadPreferences() {
 
-  String data[] = loadStrings(sketchPath("/home/pi/arquivista/preferences.txt"));
+  String data[] = loadStrings(sketchPath("../preferences.txt"));
   ArrayList<String> vars = new ArrayList<String>();
 
   for(int i=0; i<data.length; i++) {
