@@ -42,6 +42,11 @@ int numImages;       // total number of images in collection
 String[] filenames;  // ID = index
 String[] tags;       // all unique tags 
 ArrayList<int[]> associations; // associations[i] = list of IDs associated with tags[i]
+// duplicates of tags with accents are added to the end of the array
+// cp5 doesn't seem to like accents, and i'm sure there will be 
+// other scenarios where accents could be problematic
+// we keep track of where the duplicates start, so we can ignore them when needed
+int unaccentedIndex; 
 
 // Search
 StringList searchTerms = new StringList();
@@ -133,10 +138,11 @@ void setup() {
   associations = new ArrayList<int[]>();  
   
   parseMetadata(metadata);
-  //makeUnaccentedTags();
+  makeUnaccentedTags();
 
-  // print the tables
   println();
+  // print the tag list
+  /*
   for (int i=0; i<tags.length; i++) {
     print(tags[i] + ": " );
     int[] list = associations.get(i);
@@ -147,11 +153,12 @@ void setup() {
     for (int h=0; h<list.length; h++) {
       print(list[h] + ",");
     }
-    */
+    *//*
     // print(byte(8));  // backspace char to remove last comma B-) // this stopped working TT
     println();
   }
   println();
+  */
   
   xm = xMargin*width;
   ym = yMargin*width;
@@ -160,10 +167,11 @@ void setup() {
   photoWidth = xs * (1-padding);
 
   println("photoWidth = " + photoWidth);
+  println();
 
   // if(piMode) exec("chromium-browser");  ******************************************************************* UNCOMMENT THIS TO WORK!!!!
 
-  println();
+  searchLabel.setText("waiting...");
 }
 
 

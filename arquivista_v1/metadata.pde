@@ -71,6 +71,8 @@ void parseMetadata(String[] dataInput) {
 // looks for tags with accented characters (à  á  â  ã  ä  å    ç    è  é  ê  ë    ì  í  î  ï    ò  ó  ô  õ  ö    ù  ú  û  ü)
 // and replaces them with the unaccented versions
 void makeUnaccentedTags() {  
+
+  unaccentedIndex = tags.length + 1;
   
   for(int i=0; i<tags.length; i++) {
     
@@ -87,10 +89,34 @@ void makeUnaccentedTags() {
     }
     
     if(accented) {
+
       String a = new String(tag);
-      tags = append(tags, a);
-      int[] list = associations.get(i);
-      associations.add(list);
+      // get the id list for the accented tag
+      int[] list1 = associations.get(i);
+
+      int[] list2 = new int[0];
+      int j;
+
+      // check if an unaccented version of the tag is already in the database
+      boolean tagExists = false;
+      for(j=0; j<tags.length; j++) {
+        if(a.equals(tags[j])) { 
+          // if it does, get the id list for that tag
+          list2 = associations.get(j);
+          tagExists = true;
+          break;
+        }
+      }
+      if(tagExists) {
+        // and add the ids to those for the accented tag and vice versa
+        list1 = concat(list1, list2);
+        associations.set(i, list1);
+        associations.set(j, list1);
+      } else {
+        // otherwise add it as a new tag
+        tags = append(tags, a);
+        associations.add(list1);
+      }
     }
     
   }
