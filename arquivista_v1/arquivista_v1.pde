@@ -133,17 +133,22 @@ void setup() {
   associations = new ArrayList<int[]>();  
   
   parseMetadata(metadata);
-  makeUnaccentedTags();
+  //makeUnaccentedTags();
 
   // print the tables
   println();
   for (int i=0; i<tags.length; i++) {
     print(tags[i] + ": " );
     int[] list = associations.get(i);
+    // print the total number of id's associated with each tag
+    print(list.length);
+    /*
+    // print the list of id's associated with each tag
     for (int h=0; h<list.length; h++) {
       print(list[h] + ",");
     }
-    print(byte(8));  // backspace char to remove last comma B-)
+    */
+    // print(byte(8));  // backspace char to remove last comma B-) // this stopped working TT
     println();
   }
   println();
@@ -156,7 +161,7 @@ void setup() {
 
   println("photoWidth = " + photoWidth);
 
-  if(piMode) exec("chromium-browser");
+  // if(piMode) exec("chromium-browser");  ******************************************************************* UNCOMMENT THIS TO WORK!!!!
 
   println();
 }
@@ -226,61 +231,6 @@ void draw() {
   
 }
 
-
-void getIDs(String tag, boolean cleanSearch) {
-
-  // find tag index
-  int tagIndex;
-  
-  for (tagIndex=0; tagIndex<tags.length; tagIndex++) {
-    if (tag.equals(tags[tagIndex])) {
-      break;
-    }
-  }
-
-  // if a tag was found
-  if (tagIndex < tags.length) {
-    
-    println("tagIndex = " + tagIndex);
-
-    // get an array of ID's for selected tag  
-    int[] tagResults = associations.get(tagIndex);
-
-    if(cleanSearch) {
-      // if a fresh new search, clear the intlist, and fill with tagResults IDs
-      imageIDs.clear();
-      for(int i=0; i<tagResults.length; i++) {
-        imageIDs.append(tagResults[i]);
-      }
-
-    } else {
-      // otherwise it is a refined search, in which case remove all ids that are not in tagResults array
-
-      IntList filteredIDs = new IntList();  
-
-      for(int i=0; i<tagResults.length; i++) {
-        if(imageIDs.hasValue(tagResults[i])) {
-          filteredIDs.append(tagResults[i]);
-        }
-      }
-
-      imageIDs = filteredIDs;
-    }
-
-    imageIDs.shuffle(); // randomise image order.
-    numPages = ceil( (float)imageIDs.size() / (rows*columns) );
-    page = 1;
-    println("found " + imageIDs.size() + " images, for " + numPages + " pages" + '\n');
-
-  } else {
-    // otherwise if no tag was found
-    //numResults = 0;
-    imageIDs.clear();
-    numPages = 0;
-    println("tag not found" + '\n');
-  }
-  
-}
 
 void loadImages(boolean highRes) {
 
@@ -403,67 +353,6 @@ String allSearchTerms() {
     a += ", ";
   }
   return a;
-}
-
- 
-void keyPressed() {
- 
-  if(!cp5.get(Textfield.class,"search").isFocus()) {
-    if(key == 'r') randomSearch();
-    if(key == 'e') export = true;
-    if(key == 'f') {
-      showFrames = !showFrames;
-      updateBuffer();
-    }
-    if(key == 'i') {
-      showImages = !showImages;
-      updateBuffer();
-    }
-    if(key == 'c') {
-      refineSearch = !refineSearch;
-      println("refineSearch = " + refineSearch + '\n');
-      setTextboxColor();
-    }
-    if(key == 'g') {
-      cp5.get(Textfield.class,"search").setVisible(!cp5.get(Textfield.class,"search").isVisible());
-      searchLabel.setVisible(!searchLabel.isVisible());
-    }
-    if(!refresh) {
-      if(key == CODED) {
-        if(keyCode == RIGHT) {
-          pageRight();
-        }
-        if(keyCode == LEFT) {
-          pageLeft();
-        }
-      }
-      if(key == ' ') {
-        ws.sendMessage("start");
-        cp5.setColorBackground(color(#6F0108));  // red textbox
-      }
-    }
-    
-    if(key == 'h') { // print help
-      println(
-        "space - hold to listen" + '\n' +
-        "c - toggle refine search lock" + '\n' +
-        "r - random search" + '\n' +
-        "e - export" + '\n' +
-        "f - toggle image frames" + '\n' +
-        "i - toggle images" + '\n' +
-        "g - toggle search box" + '\n'
-      );
-    }
-      
-  }
-  
-}
-
-void keyReleased(){
-  if(key == ' ') {
-    ws.sendMessage("stop");
-    setTextboxColor();
-  }  
 }
 
 void pageRight() {

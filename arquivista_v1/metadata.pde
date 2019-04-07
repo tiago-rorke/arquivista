@@ -1,12 +1,12 @@
 
 void parseMetadata(String[] dataInput) {
-    
+
   // skip the header
-  for(int i=1; i<dataInput.length; i++) {    
+  for(int i=1; i<dataInput.length; i++) {
         
     // parse each line from the CSV file
     String[] data = splitTokens(dataInput[i], ",;");
-    
+
     int id = parseInt(data[0]);
     filenames[id] = data[1];
     
@@ -23,38 +23,47 @@ void parseMetadata(String[] dataInput) {
           newTag = false;
           break;
         }
-      }   
+      }
       // if it isn't, append it.   
       if(newTag) {
         tags = append(tags, data[h]);
-      } 
+      }
     }
   }
   
   // sort the tags array
   tags = sort(tags);
-    
-  // for each tag, search the input data
-  for(int i=0; i<tags.length; i++) {
-    
+
+  // initialise the tag associations list with empty arrays
+  for(int i=0; i<tags.length; i++) { 
     int[] list = new int[0];
+    associations.add(list);
+  }
+
+  // loop through the data table again, this time to populate the associations arrays 
+  for(int i=1; i<dataInput.length; i++) {
+        
+    String[] data = splitTokens(dataInput[i], ",;");
+    int id = parseInt(data[0]);
     
-    // skip the header
-    for(int h=1; h<dataInput.length; h++) {
-      String line = dataInput[h].toLowerCase();
-      String[] find = match(line, tags[i]);
-      
-      // if the tag is found, add the corresponding id to a list of id's.
-      if(find != null) {
-        int a = dataInput[h].indexOf(";");
-        int id = parseInt(dataInput[h].substring(0,a));
-        list = append(list,id);
+    for(int h=2; h<data.length; h++) {     
+      data[h] = trim(data[h]);
+      data[h] = data[h].toLowerCase();   
+    }
+
+    // look through the whole tag array each time
+    for(int j=0; j<tags.length; j++) {
+      // comparing to each tag for the entry
+      for(int h=2; h<data.length; h++) { 
+        // if it matches, get the list for that tag and append the entry id
+        if(data[h].equals(tags[j])) {
+          int[] list = associations.get(j);
+          list = append(list, id);
+          associations.set(j, list);
+        }
       }
     }
-      
-    // then add this list to the associations array
-    associations.add(list);
-  }  
+  }
   
 }
 
@@ -86,4 +95,79 @@ void makeUnaccentedTags() {
     
   }
   
+}
+
+
+void getIDs(String tag, boolean cleanSearch) {
+
+  // find tag index
+  int tagIndex;
+  
+  for (tagIndex=0; tagIndex<tags.length; tagIndex++) {
+    if (tag.equals(tags[tagIndex])) {
+      break;
+    }
+  }
+
+  // if a tag was found
+  if (tagIndex < tags.length) {
+    
+    println("tagIndex = " + tagIndex);
+
+    // get an array of ID's for selected tag  
+    int[] tagResults = associations.get(tagIndex);
+
+    if(cleanSearch) {
+      // if a fresh new search, clear the intlist, and fill with tagResults IDs
+      imageIDs.clear();
+      for(int i=0; i<tagResults.length; i++) {
+        imageIDs.append(tagResults[i]);
+      }
+
+    } else {
+      // otherwise it is a refined search, in which case remove all ids that are not in tagResults array
+
+      IntList filteredIDs = new IntList();  
+
+      for(int i=0; i<tagResults.length; i++) {
+        if(imageIDs.hasValue(tagResults[i])) {
+          filteredIDs.append(tagResults[i]);
+        }
+      }
+
+      imageIDs = filteredIDs;
+    }
+
+    imageIDs.shuffle(); // randomise image order.
+    numPages = ceil( (float)imageIDs.size() / (rows*columns) );
+    page = 1;
+    println("found " + imageIDs.size() + " images, for " + numPages + " pages" + '\n');
+
+  } else {
+    // otherwise if no tag was found
+    //numResults = 0;
+    imageIDs.clear();
+    numPages = 0;
+    println("tag not found" + '\n');
+  }
+  
+}
+
+
+int[] getTags(int id) {
+
+  int[] tagList = new int[0];
+
+  for(int j=0; j<tags.length; j++) {
+    int[] list = associations.get(j);
+
+    for(int i=0; i<list.length; i++) {
+      if(list[i] == id) {
+        tagList = append(tagList, j);
+        break;
+      }
+    }
+  }
+
+  return(tagList);  
 }
