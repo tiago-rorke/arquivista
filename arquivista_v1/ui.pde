@@ -38,7 +38,8 @@ void keyPressed() {
     }
     
     if(key == 'l') {
-      saveStrings("../tags.txt", tags);
+      String[] export = subset(tags, 0, unaccentedIndex - 1);
+      saveStrings("../tags.txt", export);
       println("exported tag list to ../tags.txt");
     }
 

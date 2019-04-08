@@ -90,7 +90,7 @@ void setup() {
 
   imgBuffer = createGraphics(width, height);
 
-  ws= new WebsocketServer(this,8080,"/ct1ln");
+  ws= new WebsocketServer(this,8080,"/arquivista");
   
   if(piMode) {
     println("connecting arduino on " + arduinoPort);
@@ -160,13 +160,16 @@ void setup() {
   println();
   */
   
+  println("number of images = " + numImages);
+  println("number of unique tags = " + unaccentedIndex);
+
   xm = xMargin*width;
   ym = yMargin*width;
   xs = (width - 2*xm)/columns;
   ys = (height - 2*ym)/rows;
   photoWidth = xs * (1-padding);
 
-  println("photoWidth = " + photoWidth);
+  println("image render width = " + photoWidth);
   println();
 
   // if(piMode) exec("chromium-browser");  ******************************************************************* UNCOMMENT THIS TO WORK!!!!

@@ -13,20 +13,24 @@ void parseMetadata(String[] dataInput) {
     // skip the first two elements (ID and filename)
     for(int h=2; h<data.length; h++) {
       
-      data[h] = trim(data[h]);
-      data[h] = data[h].toLowerCase();
-      
-      // for each element in the line, check to see if it is already in the tags array
-      boolean newTag = true;      
-      for(int j=0; j<tags.length; j++) {
-        if(tags[j].equals(data[h])) {
-          newTag = false;
-          break;
+      data[h] = trim(data[h]);      
+      if(!data[h].equals("")) { // ignore empty tags
+
+        // make all tags lowercase only
+        data[h] = data[h].toLowerCase();
+        
+        // for each element in the line, check to see if it is already in the tags array
+        boolean newTag = true;      
+        for(int j=0; j<tags.length; j++) {
+          if(tags[j].equals(data[h])) {
+            newTag = false;
+            break;
+          }
         }
-      }
-      // if it isn't, append it.   
-      if(newTag) {
-        tags = append(tags, data[h]);
+        // if it isn't, append it.   
+        if(newTag) {
+          tags = append(tags, data[h]);
+        }
       }
     }
   }
