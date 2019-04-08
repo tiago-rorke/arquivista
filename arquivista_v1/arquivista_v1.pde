@@ -160,6 +160,7 @@ void setup() {
   println();
   */
   
+  println("window size = " + windowWidth + " x " + windowHeight);
   println("number of images = " + numImages);
   println("number of unique tags = " + unaccentedIndex);
 
