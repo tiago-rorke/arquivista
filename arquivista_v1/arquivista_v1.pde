@@ -77,13 +77,13 @@ PGraphics exportRender;
 
 
 void settings() {
+  loadPreferences();
   size(windowWidth, windowHeight);
 }
 
 
 void setup() {
 
-  loadPreferences();
   images = new PImage[rows * columns];
   
   if(piMode && alwaysOnTop) surface.setAlwaysOnTop(true);
