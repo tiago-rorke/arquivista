@@ -172,7 +172,7 @@ void setup() {
   println("image render width = " + photoWidth);
   println();
 
-  // if(piMode) exec("chromium-browser");  ******************************************************************* UNCOMMENT THIS TO WORK!!!!
+  if(piMode) exec("chromium-browser");
 
   searchLabel.setText("waiting...");
 }

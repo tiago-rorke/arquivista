@@ -201,3 +201,10 @@ int[] getTags(int id) {
 
   return(tagList);  
 }
+
+
+void exportTags() {
+  String[] export = subset(tags, 0, unaccentedIndex - 1);
+  saveStrings("../tags.txt", export);
+  println("exported tag list to ../tags.txt");
+}

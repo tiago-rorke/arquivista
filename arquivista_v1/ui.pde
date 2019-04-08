@@ -38,9 +38,7 @@ void keyPressed() {
     }
     
     if(key == 'l') {
-      String[] export = subset(tags, 0, unaccentedIndex - 1);
-      saveStrings("../tags.txt", export);
-      println("exported tag list to ../tags.txt");
+      exportTags();
     }
 
     if(key == 'h') { // print help
