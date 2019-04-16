@@ -335,6 +335,8 @@ void webSocketServerEvent(String msg){
   if(!ready && msg.equals("ready")) {
     ready = true;
     searchLabel.setText("ready");
+  } else if(msg.equals("#")) {
+    // ping, do nothing
   } else if (ready) {
     search(msg);
   }
