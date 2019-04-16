@@ -344,8 +344,8 @@ void webSocketServerEvent(String msg){
 void webSocketKeepAlive() {
   if(millis() - wsTimer > pingInterval) {
     ws.sendMessage("?");
+    wsTimer = millis();
   }
-  wsTimer = millis();
 }
 
 void randomSearch() {
