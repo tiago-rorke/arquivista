@@ -26,6 +26,9 @@
         if(event.data == "stop") {
             recognition.stop();
         }
+        if(event.data == "?") {
+            ws.send("#");
+        }
     }
 
     recognition.onresult = function(event) {

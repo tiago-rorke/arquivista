@@ -61,6 +61,8 @@ boolean refineSearch = false;
 WebsocketServer ws;
 Serial arduino;
 boolean ready = false;
+int pingInterval = 15000; // ping after 15s of websockets inactivity
+long wsTimer;
 
 // GUI
 ControlP5 cp5;
@@ -91,6 +93,7 @@ void setup() {
   imgBuffer = createGraphics(width, height);
 
   ws= new WebsocketServer(this,8080,"/arquivista");
+  wsTimer = millis();
   
   if(piMode) {
     println("connecting arduino on " + arduinoPort);
@@ -182,6 +185,8 @@ void setup() {
 void draw() {
 
   background(0);
+
+  webSocketKeepAlive();
 
   // for export
   if(export) {
@@ -333,6 +338,14 @@ void webSocketServerEvent(String msg){
   } else if (ready) {
     search(msg);
   }
+  wsTimer = millis();
+}
+
+void webSocketKeepAlive() {
+  if(millis() - wsTimer > pingInterval) {
+    ws.sendMessage("?");
+  }
+  wsTimer = millis();
 }
 
 void randomSearch() {
@@ -413,6 +426,7 @@ void serialEvent(Serial port) {
           ws.sendMessage("stop");
           setTextboxColor();
         }
+        wsTimer = millis();
         break;
       case '<':
         pageLeft();
