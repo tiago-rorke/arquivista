@@ -23,14 +23,17 @@ PVector[] pos;      // word position
 boolean[] visible;  // flags to show words
 int num_words;      // number of words on the screen
 
-int interval = 0; // interval in milliseconds between triggering word changes
-int fadeSpeed = 200;
+int fadeinInterval = 200; // interval in milliseconds between triggering word changes
+int fadeinSpeed = 50;
+int fadeoutInterval = 10;
+int fadeoutSpeed = 150;
 int fadeout_delay = 1000; // also the exit delay
 
 // state flags
 boolean done = false;     // all words are visible
 boolean fade_out = false; // fadeout_delay has passed
 
+int interval = fadeinInterval; 
 int index;
 long timer;
 PFont font;
@@ -83,14 +86,14 @@ void draw() {
   for(int i=0; i<num_words; i++) {
     if(!fade_out) {          // if not fading out
       if(visible[i]) {         // if flagged to appear
-        opa[i] += fadeSpeed;   // increase the opacity
+        opa[i] += fadeinSpeed;   // increase the opacity
         if(opa[i] > 255) {     // limit the opacity to 255
           opa[i] = 255;
         }
       }
     } else {                 // if fading out
       if(!visible[i]) {
-        opa[i] -= fadeSpeed;
+        opa[i] -= fadeoutSpeed;
         if(opa[i] < 0) {
           opa[i] = 0;
         }
@@ -144,6 +147,7 @@ void draw() {
   // if all the words are visible and the fadeout_delay has passed
   } else if(done && millis() - timer > fadeout_delay && !fade_out) {
     fade_out = true;
+    interval = fadeoutInterval;
     done = false;
 
   // if fading out and all the words are hidden and the fadeout_delay has passed
