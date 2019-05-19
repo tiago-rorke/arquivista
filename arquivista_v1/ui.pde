@@ -5,7 +5,7 @@ void keyPressed() {
   if(!cp5.get(Textfield.class,"search").isFocus()) {
     if(key == 'r') randomSearch();
     if(key == 'e') export = true;
-    if(key == 'f') {
+    if(key == 'm') {
       showFrames = !showFrames;
       updateBuffer();
     }
@@ -17,6 +17,13 @@ void keyPressed() {
       refineSearch = !refineSearch;
       println("refineSearch = " + refineSearch + '\n');
       setTextboxColor();
+    }
+    if(key == 'f') {
+      singleView = !singleView;
+      println("singleView = " + singleView + '\n');
+      setupLayout();
+      refresh = true;
+      newSearch = true;
     }
     if(key == 'g') {
       cp5.get(Textfield.class,"search").setVisible(!cp5.get(Textfield.class,"search").isVisible());
@@ -45,9 +52,10 @@ void keyPressed() {
       println(
         "space - hold to listen" + '\n' +
         "c - toggle refine search lock" + '\n' +
+        "f - toggle single image view" + '\n' +
         "r - random search" + '\n' +
         "e - export" + '\n' +
-        "f - toggle image frames" + '\n' +
+        "m - toggle image frames" + '\n' +
         "i - toggle images" + '\n' +
         "g - toggle search box" + '\n' +
         "l - save tag list to file" + '\n'
@@ -78,9 +86,9 @@ void mousePressed() {
     if (y > ym && y < height - ym) {
       x -= xm;
       y -= ym;
-      i = columns*floor(y/ys) + floor(x/xs);
+      i = nc * floor(y/ys) + floor(x/xs);
       if(i > -1 && i < imagesOnScreen()) {
-        int id = imageIDs.get(i + (page-1)*rows*columns);
+        int id = imageIDs.get(i + (page-1) * nr * nc);
         println("id = " + id);
         println("filename = " + filenames[id] + ".jpg");
         print("tags = ");

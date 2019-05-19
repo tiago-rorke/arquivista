@@ -169,7 +169,7 @@ void getIDs(String tag, boolean cleanSearch) {
     }
 
     imageIDs.shuffle(); // randomise image order.
-    numPages = ceil( (float)imageIDs.size() / (rows*columns) );
+    numPages = ceil( (float)imageIDs.size() / (nr * nc) );
     page = 1;
     println("found " + imageIDs.size() + " images, for " + numPages + " pages" + '\n');
 
@@ -180,7 +180,7 @@ void getIDs(String tag, boolean cleanSearch) {
     numPages = 0;
     println("tag not found" + '\n');
   }
-  
+
 }
 
 

@@ -35,7 +35,10 @@ float padding = 0.1;  // percentage of photoWidth
 PGraphics imgBuffer;
 int fade = 0;
 float photoWidth;
-float xm, ym, xs, ys;
+float xm, ym; // margin size in px
+float xs, ys; // image size in px
+int nc, nr; // number of rows and columns
+boolean singleView = false; // single image view toggle
 
 // Metadata Tables
 int numImages;       // total number of images in collection
@@ -86,7 +89,6 @@ void settings() {
 
 void setup() {
 
-  images = new PImage[rows * columns];
   
   if(piMode && alwaysOnTop) surface.setAlwaysOnTop(true);
 
@@ -169,16 +171,13 @@ void setup() {
 
   xm = xMargin*width;
   ym = yMargin*width;
-  xs = (width - 2*xm)/columns;
-  ys = (height - 2*ym)/rows;
-  photoWidth = xs * (1-padding);
-
-  println("image render width = " + photoWidth);
-  println();
+  setupLayout();
 
   if(piMode) exec("chromium-browser");
 
+  delay(2000);
   searchLabel.setText("waiting...");
+  updateLCD_word("waiting...");
 }
 
 
@@ -222,19 +221,7 @@ void draw() {
     rect(0, 0, width, height);
     if (fade > 255) {
       fade = 255; 
-      if(newSearch) {
-        if(refineSearch)
-          getIDs(searchTerms.get(searchTerms.size()-1), false);
-        else
-          getIDs(searchTerms.get(0), true); 
-        newSearch = false;
-      }
-      loadImages(false);
-      updateBuffer();
-      if(imageIDs.size() > 0 )
-        searchLabel.setText(allSearchTerms() + page + " of " + numPages + " (" + imageIDs.size() + ")");
-      else
-        searchLabel.setText(allSearchTerms() + "(no results)");
+      updateConsole();
       refresh = false;
     }
     fade += fadeSpeed;
@@ -249,10 +236,31 @@ void draw() {
 }
 
 
+void setupLayout() {
+
+  if(singleView) {
+    nr = 1;
+    nc = 1;
+  } else {
+    nr = rows;
+    nc = columns;
+  }
+  
+  images = new PImage[nr * nc];
+  xs = (width - 2*xm)/nc;
+  ys = (height - 2*ym)/nr;
+  photoWidth = xs * (1-padding);
+
+  println("image render width = " + photoWidth);
+  println();
+
+}
+
+
 void loadImages(boolean highRes) {
 
   for(int i=0; i<imagesOnScreen(); i++) {
-    int id = imageIDs.get(i + (page-1)*rows*columns);
+    int id = imageIDs.get(i + (page-1) * nr * nc);
     if(highRes) {
       println("loading image " + (i+1));
       images[i] = loadImage(dataPath + "image_highres/" + filenames[id] + ".jpg");
@@ -293,8 +301,8 @@ void drawImages(PGraphics g, boolean forExport) {
     
     float r = (float)images[0].height/(float)images[0].width;
       
-    float x = i%columns*xs + xm + xs/2;
-    float y = ceil(i/columns)*ys + ym + ys/2;
+    float x = i%nc * xs + xm + xs/2;
+    float y = ceil(i/nc) * ys + ym + ys/2;
     
     if(forExport) {
       float s = (float)exportWidth/(float)width;
@@ -319,7 +327,7 @@ void drawImages(PGraphics g, boolean forExport) {
 int imagesOnScreen() {
   int i;
   int a = imageIDs.size();
-  int b = rows*columns;
+  int b = nr * nc;
   if(numPages<=1 || page == numPages) {
     i = a%b;
     if(i==0 && a>0) i=b;
@@ -335,6 +343,7 @@ void webSocketServerEvent(String msg){
   if(!ready && msg.equals("ready")) {
     ready = true;
     searchLabel.setText("ready");
+    updateLCD_word("ready");
   } else if(msg.equals("#")) {
     // ping, do nothing
   } else if (ready) {
@@ -430,6 +439,12 @@ void serialEvent(Serial port) {
         }
         wsTimer = millis();
         break;
+      case 'F':
+        singleView = !singleView;
+        setupLayout();
+        refresh = true;
+        newSearch = true;
+        break;
       case '<':
         pageLeft();
         break;
@@ -450,4 +465,51 @@ void selectDataPath(File selection) {
     dataPath = selection.getAbsolutePath() + "/";
     println("loading database from " + dataPath);
   }
+}
+
+
+void updateConsole() {
+
+  //String currentSearchTerm = "";
+  String currentSearchTerm = searchTerms.get(searchTerms.size()-1);
+      //currentSearchTerm = searchTerms.get(0);
+
+  if(newSearch) {
+    if(refineSearch) {
+      getIDs(currentSearchTerm, false);
+    } else {
+      getIDs(currentSearchTerm, true); 
+    } 
+    newSearch = false;
+  }
+
+  loadImages(false);
+  updateBuffer();
+  
+  if(imageIDs.size() > 0 ) {
+    updateLCD_word(currentSearchTerm);
+    searchLabel.setText(allSearchTerms() + page + " of " + numPages + " (" + imageIDs.size() + ")");
+    updateLCD_pages();
+  } else {
+    searchLabel.setText(allSearchTerms() + "(no results)");
+    updateLCD_word("(no results)");
+  }
+
+}
+
+
+
+void updateLCD_pages() {
+  arduino.write("N");
+  arduino.write(nf(page));
+  arduino.write(',');
+  arduino.write(nf(numPages));
+  arduino.write('\n');
+}
+
+
+void updateLCD_word(String searchString) {
+  arduino.write("W");
+  arduino.write(searchString);  
+  arduino.write('\n');
 }
