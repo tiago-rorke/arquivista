@@ -8,10 +8,12 @@ void loadDefaults() {
 void savePreferences() {
 
   String[] preferences = {
-    "// enable raspberry pi mode (autostart chrome, autoselect serial port and database folder)",
-    "piMode=" + (piMode ? 1 : 0),
+    "autostartChrome=" + (autostartChrome ? 1 : 0),
     "alwaysOnTop=" + (alwaysOnTop ? 1 : 0),
+    "useArduino=" + (useArduino ? 1 : 0),
+    "autoselectPort=" + (autoselectPort ? 1 : 0),
     "arduinoPort=" + arduinoPort,
+    "autoloadDatabase=" + (autoloadDatabase ? 1 : 0),
     "dataPath=" + dataPath,
     "",
     "windowWidth=" + windowWidth,
@@ -73,7 +75,10 @@ void parsePreferences(String[] data) {
   }
   
   // bools
-  piMode = Integer.parseInt(data[vars.indexOf("piMode")]) > 0 ? true : false;
+  autostartChrome = Integer.parseInt(data[vars.indexOf("autostartChrome")]) > 0 ? true : false;
+  useArduino = Integer.parseInt(data[vars.indexOf("useArduino")]) > 0 ? true : false;
+  autoselectPort = Integer.parseInt(data[vars.indexOf("autoselectPort")]) > 0 ? true : false;
+  autoloadDatabase = Integer.parseInt(data[vars.indexOf("autoloadDatabase")]) > 0 ? true : false;
   alwaysOnTop = Integer.parseInt(data[vars.indexOf("alwaysOnTop")]) > 0 ? true : false;
   loadHighRes = Integer.parseInt(data[vars.indexOf("loadHighRes")]) > 0 ? true : false;
 

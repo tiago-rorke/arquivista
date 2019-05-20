@@ -12,10 +12,12 @@ import java.awt.FileDialog;
 // these are default values, they will be replaced
 // by what is defined in preferences.txt
 
-// raspberry pi mode = autostart chrome, autoselect serial port.
-boolean piMode = true;
+boolean autostartChrome = false;
 boolean alwaysOnTop = false;
+boolean useArduino = false;
+boolean autoselectPort = false;
 String arduinoPort = "/dev/ttyACM0";
+boolean autoloadDatabase = false;
 String dataPath = "/home/pi/arquivista_data/";
 
 int windowWidth = 1024;
@@ -113,40 +115,45 @@ void settings() {
 void setup() {
 
   
-  if(piMode && alwaysOnTop) surface.setAlwaysOnTop(true);
+  if(alwaysOnTop) surface.setAlwaysOnTop(true);
 
   imgBuffer = createGraphics(width, height);
 
   ws= new WebsocketServer(this,8080,"/arquivista");
   wsTimer = millis();
   
-  if(piMode) {
-    println("connecting arduino on " + arduinoPort);
-    arduino = new Serial(this, arduinoPort, 115200);
-    arduino.bufferUntil('\n');
-  } else {
-    selectFolder("where is the database?", "selectDataPath");
-    if(Serial.list().length > 0) {
-      arduinoPort = (String) JOptionPane.showInputDialog(
-        null, 
-        "which port for arduino?", 
-        "select port", 
-        JOptionPane.PLAIN_MESSAGE, 
-        null, 
-        Serial.list(), 
-        Serial.list()[Serial.list().length-1]
-      );
+  if(useArduino) {
+    if(autoselectPort) {
       println("connecting arduino on " + arduinoPort);
-      try {
-        arduino = new Serial(this, arduinoPort, 115200);
-        arduino.bufferUntil('\n');
-      }
-      catch(Exception e) {
-        println("no arduino connected");
-      }
+      arduino = new Serial(this, arduinoPort, 115200);
+      arduino.bufferUntil('\n');
     } else {
-      println("no arduino connected");
+      if(Serial.list().length > 0) {
+        arduinoPort = (String) JOptionPane.showInputDialog(
+          null, 
+          "which port for arduino?", 
+          "select port", 
+          JOptionPane.PLAIN_MESSAGE, 
+          null, 
+          Serial.list(), 
+          Serial.list()[Serial.list().length-1]
+        );
+        println("connecting arduino on " + arduinoPort);
+        try {
+          arduino = new Serial(this, arduinoPort, 115200);
+          arduino.bufferUntil('\n');
+        }
+        catch(Exception e) {
+          println("no arduino connected");
+        }
+      }
     }
+  } else {
+    println("no arduino connected");
+  }
+
+  if(!autoloadDatabase) {
+    selectFolder("where is the database?", "selectDataPath");    
   }
 
   cp5 = new ControlP5(this);
@@ -201,7 +208,7 @@ void setup() {
   textAlign(CENTER, CENTER);
   textSize(standby_font_size);
 
-  if(piMode) exec("chromium-browser");
+  if(autostartChrome) exec("chromium-browser");
 
   delay(2000);
   searchLabel.setText(str_connecting);
@@ -616,22 +623,28 @@ void serialEvent(Serial port) {
 
 
 void updateLCD_pages() {
-  arduino.write("N");
-  arduino.write(nf(page));
-  arduino.write(',');
-  arduino.write(nf(numPages));
-  arduino.write('\n');
+  if(useArduino) {
+    arduino.write("N");
+    arduino.write(nf(page));
+    arduino.write(',');
+    arduino.write(nf(numPages));
+    arduino.write('\n');
+  }
 }
 
 
 void updateLCD_word(String searchStrings) {
-  arduino.write("W");
-  arduino.write(searchStrings);
-  arduino.write('\n');
+  if(useArduino) {
+    arduino.write("W");
+    arduino.write(searchStrings);
+    arduino.write('\n');
+  }
 }
 
 void updateLCD_msg(String msg) {
-  arduino.write("M");
-  arduino.write(msg);  
-  arduino.write('\n');
+  if(useArduino) {
+    arduino.write("M");
+    arduino.write(msg);  
+    arduino.write('\n');
+  }
 }
