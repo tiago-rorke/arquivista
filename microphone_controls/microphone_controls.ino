@@ -32,7 +32,7 @@ int p = 0; // total number of pages
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0,0);
@@ -94,17 +94,43 @@ void loop() {
   if (stringComplete) {
     switch(inString.charAt(0)) {   
       case 'W': {
-          // word 
+          // search word (line 1)
           inString = inString.substring(1);
           inString.trim();
+          if(inString.length() > 16) {
+            inString = inString.substring(inString.length() - 16);
+          }
           lcd.setCursor(0,0);
           lcd.print("                "); // clear the line
           int x = 0;
           int i = 0;
-          //Serial.println(inString.length());
           for(int h = 0; h < inString.length(); h++) {
             lcd.setCursor(x,0);
             x += print_char(inString.charAt(h), &i);
+          }
+          // pad with whitespace, does not see to be neccessary
+          /*while (x < 16) {
+            lcd.print(' ');
+            x++;
+          }*/
+        } break;
+
+      case 'M': {
+          // message (line 2)
+          inString = inString.substring(1);
+          inString.trim();
+          if(inString.length() > 16) {
+            inString = inString.substring(inString.length() - 16);
+          }
+          lcd.setCursor(0,1);
+          lcd.print("                "); // clear the line
+          int x = 0;
+          int i = 0;
+          for(int h = 0; h < inString.length(); h++) {
+            lcd.setCursor(x,1);
+            x += print_char(inString.charAt(h), &i);
+            if(x >= 16)
+              break;
           }
         } break;
 
@@ -116,12 +142,10 @@ void loop() {
           p = ps.toInt();
           lcd.setCursor(0,1);
           lcd.print("                "); // clear the line
-          //if(n > 0 && p > 0) {
-            lcd.setCursor(0,1);
-            lcd.print(n);
-            lcd.print(" / ");
-            lcd.print(p);
-          //}
+          lcd.setCursor(0,1);
+          lcd.print(n);
+          lcd.print(" / ");
+          lcd.print(p);
         } break;
     }
     inString = "";

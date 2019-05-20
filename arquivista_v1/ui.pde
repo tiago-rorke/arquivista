@@ -4,6 +4,7 @@ void keyPressed() {
  
   if(!cp5.get(Textfield.class,"search").isFocus()) {
     if(key == 'r') randomSearch();
+    if(key == 'x') initStandby();
     if(key == 'e') export = true;
     if(key == 'm') {
       showFrames = !showFrames;
@@ -16,14 +17,10 @@ void keyPressed() {
     if(key == 'c') {
       refineSearch = !refineSearch;
       println("refineSearch = " + refineSearch + '\n');
-      setTextboxColor();
+      updateTextboxColor();
     }
     if(key == 'f') {
-      singleView = !singleView;
-      println("singleView = " + singleView + '\n');
-      setupLayout();
-      refresh = true;
-      newSearch = true;
+      toggleSingleView();
     }
     if(key == 'g') {
       cp5.get(Textfield.class,"search").setVisible(!cp5.get(Textfield.class,"search").isVisible());
@@ -54,6 +51,7 @@ void keyPressed() {
         "c - toggle refine search lock" + '\n' +
         "f - toggle single image view" + '\n' +
         "r - random search" + '\n' +
+        "x - go to standby" + '\n' +
         "e - export" + '\n' +
         "m - toggle image frames" + '\n' +
         "i - toggle images" + '\n' +
@@ -70,7 +68,7 @@ void keyPressed() {
 void keyReleased(){
   if(key == ' ') {
     ws.sendMessage("stop");
-    setTextboxColor();
+    updateTextboxColor();
   }  
 }
 
@@ -98,6 +96,7 @@ void mousePressed() {
         }
         println();
         println();
+        standbyTimer = millis();
       }
     }
   }

@@ -6,7 +6,8 @@ import java.util.*;
 import javax.swing.JOptionPane;
 import java.awt.FileDialog;
 
-// ========= PREFERENCES ========= //
+
+// ----------------------------- PREFERENCES ------------------------------- //
 
 // these are default values, they will be replaced
 // by what is defined in preferences.txt
@@ -28,8 +29,22 @@ float xMargin = 0.05; // percentage of total width
 float yMargin = 0.04; // percentage of total width
 float padding = 0.1;  // percentage of photoWidth
 
+long standbyTimeout = 10000;
 
-// ========= VARS ========= //
+
+// ------------------------------ MESSAGES --------------------------------- //
+
+String str_connecting = "connecting...";
+String str_loading = "loading..."; // also hardcoded on arduino
+String str_waiting = "waiting for word";
+String str_searching = "(searching...)";
+String str_no_results = "(no results)";
+
+PFont standby_font;
+int standby_font_size = 20;
+
+
+// --------------------------------- VARS ---------------------------------- //
 
 // Visuals
 PGraphics imgBuffer;
@@ -39,6 +54,10 @@ float xm, ym; // margin size in px
 float xs, ys; // image size in px
 int nc, nr; // number of rows and columns
 boolean singleView = false; // single image view toggle
+boolean standby = false;
+boolean toStandby = false;
+boolean leaveStandby = false;
+long standbyTimer;
 
 // Metadata Tables
 int numImages;       // total number of images in collection
@@ -81,6 +100,10 @@ boolean export = false;
 PGraphics exportRender;
 
 
+
+// ========================================================================= //
+
+
 void settings() {
   loadPreferences();
   size(windowWidth, windowHeight);
@@ -99,7 +122,7 @@ void setup() {
   
   if(piMode) {
     println("connecting arduino on " + arduinoPort);
-    arduino = new Serial(this, arduinoPort, 9600);
+    arduino = new Serial(this, arduinoPort, 115200);
     arduino.bufferUntil('\n');
   } else {
     selectFolder("where is the database?", "selectDataPath");
@@ -115,7 +138,7 @@ void setup() {
       );
       println("connecting arduino on " + arduinoPort);
       try {
-        arduino = new Serial(this, arduinoPort, 9600);
+        arduino = new Serial(this, arduinoPort, 115200);
         arduino.bufferUntil('\n');
       }
       catch(Exception e) {
@@ -131,7 +154,7 @@ void setup() {
   cp5.setFont(font);
   cp5.addTextfield("search").setPosition(20, height-40).getCaptionLabel().setVisible(false);   
   searchLabel = cp5.addTextlabel("searchLabel").setText("").setPosition(20, height-60);
-  searchLabel.setText("loading...");
+  searchLabel.setText(str_loading);
 
   exportHeight = int(exportWidth*height/width);
 
@@ -173,11 +196,17 @@ void setup() {
   ym = yMargin*width;
   setupLayout();
 
+  standby_font = loadFont("font.vlw");
+  textFont(standby_font);
+  textAlign(CENTER, CENTER);
+  textSize(standby_font_size);
+
   if(piMode) exec("chromium-browser");
 
   delay(2000);
-  searchLabel.setText("waiting...");
-  updateLCD_word("waiting...");
+  searchLabel.setText(str_connecting);
+  updateLCD_word(str_connecting);
+  standbyTimer = 999999;
 }
 
 
@@ -211,29 +240,200 @@ void draw() {
   }
 
   imageMode(CORNER);
-  image(imgBuffer,0,0);
+  if(standby) {
+    fill(255);
+    text(str_waiting, width/2, height/2);
+  } else {
+    image(imgBuffer,0,0);
+  }
 
   // handle fade out/in
-  if (refresh) {
+  if (refresh || toStandby || leaveStandby) { // fade out
     noStroke();
     rectMode(CORNER);
     fill(0, fade);
     rect(0, 0, width, height);
     if (fade > 255) {
       fade = 255; 
-      updateConsole();
-      refresh = false;
+      if(refresh) {
+        updateSearch();
+        refresh = false;
+      }
+      if(toStandby) {
+        toStandby = false;
+        standby = true;
+        initStandby();
+      }
+      if(leaveStandby) {
+        leaveStandby = false;
+        standby = false;
+      }
     }
     fade += fadeSpeed;
-  } else if (fade > 0) {
+  } else if (fade > 0) { // fade in
     noStroke();
     rectMode(CORNER);
     fill(0, (int)fade);
     rect(0, 0, width, height);
     fade -= fadeSpeed;
   }
+
+  // triggering/exiting standby mode
+  if(!standby && !toStandby && millis() - standbyTimer > standbyTimeout) {
+    toStandby = true;
+  }
+  if(standby && millis() - standbyTimer < standbyTimeout) {
+    leaveStandby = true;
+  }
   
 }
+
+
+// ========================================================================= //
+
+
+// -------------------------------- SETUP ---------------------------------- //
+
+void selectDataPath(File selection) {
+  if (selection == null) {
+    println("no path selected for database.");
+    exit();
+  } else {
+    dataPath = selection.getAbsolutePath() + "/";
+    println("loading database from " + dataPath);
+  }
+}
+
+
+
+// --------------------------- STATE MANAGEMENT ---------------------------- //
+
+
+void initStandby() {
+  updateLCD_word(str_waiting);
+  updateLCD_msg("");
+  searchLabel.setText("");
+  searchTerms.clear();
+  imageIDs.clear();
+  imgBuffer.beginDraw();
+  imgBuffer.background(0);
+  imgBuffer.endDraw();
+  singleView = false;
+  setupLayout();
+}
+
+void pageRight() {
+  if(page<numPages) {
+    page++;
+    refresh = true;
+    standbyTimer = millis();
+  }
+}
+
+void pageLeft() {
+  if(page>1) {
+    page--;
+    refresh = true;
+    standbyTimer = millis();
+  }
+}
+
+
+void toggleSingleView() {
+  if(imageIDs.size() > 0) {
+    singleView = !singleView;
+    println("singleView = " + singleView + '\n');
+    setupLayout();
+    refresh = true;
+    newSearch = true;
+    standbyTimer = millis();
+  }
+}
+
+
+// -------------------------------- SEARCH --------------------------------- //
+
+
+void search(String searchString) {
+  standbyTimer = millis();
+
+  searchString = searchString.toLowerCase();
+  searchString = searchString.trim();
+  if(refineSearch) {
+    if(imageIDs.size() == 0 && searchTerms.size() > 0) {
+      searchTerms.remove(searchTerms.size()-1);
+    }
+    searchTerms.append(searchString);
+  } else {
+    searchTerms.clear();
+    searchTerms.append(searchString);    
+  }
+  println(searchString);
+  refresh = true;
+  searchLabel.setText(allSearchTerms() + str_searching);
+  updateLCD_word(allSearchTerms());
+  updateLCD_msg(str_searching);
+  newSearch = true;
+}
+ 
+
+void updateSearch() {
+
+  if(searchTerms.size() > 0) {
+    String currentSearchTerm = "";
+    currentSearchTerm = searchTerms.get(searchTerms.size()-1);
+
+    if(newSearch) {
+      if(refineSearch && searchTerms.size() > 1) {
+        getIDs(currentSearchTerm, false);
+      } else {
+        getIDs(currentSearchTerm, true); 
+      } 
+      newSearch = false;
+    }
+
+    loadImages(false);
+    updateBuffer();
+    
+    if(imageIDs.size() > 0 ) {
+      searchLabel.setText(allSearchTerms() + page + " of " + numPages + " (" + imageIDs.size() + ")");
+      updateLCD_pages();
+      updateLCD_word(allSearchTerms());
+    } else {
+      searchLabel.setText(allSearchTerms() + str_no_results);
+      updateLCD_word(allSearchTerms());
+      updateLCD_msg(str_no_results);
+    }
+  }
+}
+
+
+String allSearchTerms() {
+  String a = searchTerms.get(0);
+  for(int i=1; i<searchTerms.size(); i++) {
+    a += ", ";
+    a += searchTerms.get(i);
+  }
+  return a;
+}
+
+
+void randomSearch() {
+  int i = (int)random(1, tags.length);
+  search(tags[i]);
+}
+
+
+void updateTextboxColor() {
+  if(refineSearch)
+    cp5.setColorBackground(color(#015848));  // green textbox
+  else {
+    cp5.setColorBackground(color(#01336F));  // blue textbox
+  }
+}
+
+
+// -------------------------------- DRAWING -------------------------------- //
 
 
 void setupLayout() {
@@ -253,7 +453,6 @@ void setupLayout() {
 
   println("image render width = " + photoWidth);
   println();
-
 }
 
 
@@ -337,6 +536,11 @@ int imagesOnScreen() {
   return i;
 }
 
+
+
+// -------------------------- VOICE RECOGINITION --------------------------- //
+
+
 void webSocketServerEvent(String msg){
   //println(msg);
   delay(100);
@@ -344,6 +548,7 @@ void webSocketServerEvent(String msg){
     ready = true;
     searchLabel.setText("ready");
     updateLCD_word("ready");
+    standbyTimer = millis() - standbyTimeout + 2000;
   } else if(msg.equals("#")) {
     // ping, do nothing
   } else if (ready) {
@@ -359,61 +564,11 @@ void webSocketKeepAlive() {
   }
 }
 
-void randomSearch() {
-  int i = (int)random(1, tags.length);
-  search(tags[i]);
-}
 
-void search(String searchString) {
-  searchString = searchString.toLowerCase();
-  searchString = searchString.trim();
-  if(refineSearch) {
-    if(imageIDs.size() == 0) {
-      searchTerms.remove(searchTerms.size()-1);
-    }
-    searchTerms.append(searchString);
-  } else {
-    searchTerms.clear();
-    searchTerms.append(searchString);    
-  }
-  println(searchString);
-  refresh = true;
-  searchLabel.setText(allSearchTerms() + "(searching...)");
-  newSearch = true;
-}
- 
-String allSearchTerms() {
-  String a = "";
-  for(int i=0; i<searchTerms.size(); i++) {
-    a += searchTerms.get(i);
-    a += ", ";
-  }
-  return a;
-}
-
-void pageRight() {
-  if(page<numPages) {
-    page++;
-    refresh = true;
-  }
-}
-
-void pageLeft() {
-  if(page>1) {
-    page--;
-    refresh = true;
-  }
-}
-
-void setTextboxColor() {
-  if(refineSearch)
-    cp5.setColorBackground(color(#015848));  // green textbox
-  else {
-    cp5.setColorBackground(color(#01336F));  // blue textbox
-  }
-}
+// ------------------------------- BUTTONS --------------------------------- //
 
 void serialEvent(Serial port) {
+
 
   String s = port.readStringUntil('\n');
   
@@ -424,9 +579,11 @@ void serialEvent(Serial port) {
           refineSearch = true;
         }
         if(s.charAt(1) == 'D') { // refine search
-          refineSearch = false;          
+          refineSearch = false;
         }
-        setTextboxColor();
+        println("refineSearch = " + refineSearch + '\n'); 
+        updateTextboxColor();
+        standbyTimer = millis();
         break;      
       case 'S':
         if(s.charAt(1) == 'E') { // start listening
@@ -435,15 +592,13 @@ void serialEvent(Serial port) {
         }
         if(s.charAt(1) == 'D') { // stop listening
           ws.sendMessage("stop");
-          setTextboxColor();
+          updateTextboxColor();
         }
         wsTimer = millis();
+        standbyTimer = millis();
         break;
       case 'F':
-        singleView = !singleView;
-        setupLayout();
-        refresh = true;
-        newSearch = true;
+        toggleSingleView();
         break;
       case '<':
         pageLeft();
@@ -457,46 +612,7 @@ void serialEvent(Serial port) {
 }
 
 
-void selectDataPath(File selection) {
-  if (selection == null) {
-    println("no path selected for database.");
-    exit();
-  } else {
-    dataPath = selection.getAbsolutePath() + "/";
-    println("loading database from " + dataPath);
-  }
-}
-
-
-void updateConsole() {
-
-  //String currentSearchTerm = "";
-  String currentSearchTerm = searchTerms.get(searchTerms.size()-1);
-      //currentSearchTerm = searchTerms.get(0);
-
-  if(newSearch) {
-    if(refineSearch) {
-      getIDs(currentSearchTerm, false);
-    } else {
-      getIDs(currentSearchTerm, true); 
-    } 
-    newSearch = false;
-  }
-
-  loadImages(false);
-  updateBuffer();
-  
-  if(imageIDs.size() > 0 ) {
-    updateLCD_word(currentSearchTerm);
-    searchLabel.setText(allSearchTerms() + page + " of " + numPages + " (" + imageIDs.size() + ")");
-    updateLCD_pages();
-  } else {
-    searchLabel.setText(allSearchTerms() + "(no results)");
-    updateLCD_word("(no results)");
-  }
-
-}
-
+// --------------------------------- LCD ----------------------------------- //
 
 
 void updateLCD_pages() {
@@ -508,8 +624,14 @@ void updateLCD_pages() {
 }
 
 
-void updateLCD_word(String searchString) {
+void updateLCD_word(String searchStrings) {
   arduino.write("W");
-  arduino.write(searchString);  
+  arduino.write(searchStrings);
+  arduino.write('\n');
+}
+
+void updateLCD_msg(String msg) {
+  arduino.write("M");
+  arduino.write(msg);  
   arduino.write('\n');
 }

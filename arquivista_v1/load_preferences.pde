@@ -1,9 +1,7 @@
 
 /*
 void loadDefaults() {
-
   // in main .pde
-
 }
 */
 
@@ -33,8 +31,12 @@ void savePreferences() {
     "yMargin=" + yMargin,
     "",
     "// padding is percentage of photoWidth",
-    "padding=" + padding
+    "padding=" + padding,
+    "",
+    "// standby timeout is in seconds",
+    "standbyTimeout=" + standbyTimeout
   };
+
   saveStrings("../preferences.txt", preferences);
 
 }
@@ -91,5 +93,8 @@ void parsePreferences(String[] data) {
   xMargin = Float.parseFloat(data[vars.indexOf("xMargin")]);
   yMargin = Float.parseFloat(data[vars.indexOf("yMargin")]);
   padding = Float.parseFloat(data[vars.indexOf("padding")]);
+
+  // longs
+  standbyTimeout = Long.parseLong(data[vars.indexOf("standbyTimeout")]);
 
 }
