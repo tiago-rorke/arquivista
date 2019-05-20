@@ -33,16 +33,12 @@ float padding = 0.1;  // percentage of photoWidth
 
 long standbyTimeout = 10000;
 
-
-// ------------------------------ MESSAGES --------------------------------- //
-
 String str_connecting = "connecting...";
-String str_loading = "loading..."; // also hardcoded on arduino
 String str_waiting = "waiting for word";
 String str_searching = "(searching...)";
 String str_no_results = "(no results)";
+String str_loading = "loading..."; // also hardcoded on arduino
 
-PFont standby_font;
 int standby_font_size = 20;
 
 
@@ -63,6 +59,7 @@ boolean standby = false;
 boolean toStandby = false;
 boolean leaveStandby = false;
 long standbyTimer;
+PFont standby_font;
 
 // Metadata Tables
 int numImages;       // total number of images in collection

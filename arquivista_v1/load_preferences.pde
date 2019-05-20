@@ -36,7 +36,17 @@ void savePreferences() {
     "padding=" + padding,
     "",
     "// standby timeout is in seconds",
-    "standbyTimeout=" + standbyTimeout
+    "standbyTimeout=" + standbyTimeout,
+    "",
+    "// messages",
+    "str_connecting=" + "connecting...",
+    "str_waiting=" + "waiting for word",
+    "str_searching=" + "(searching...)",
+    "str_no_results=" + "(no results)",
+    "standby_font_size=" + 20,
+    "// loading message also in arduino code",    
+    "str_loading=" + "loading...",
+    ""
   };
 
   saveStrings("../preferences.txt", preferences);
@@ -85,7 +95,12 @@ void parsePreferences(String[] data) {
   // strings
   arduinoPort = data[vars.indexOf("arduinoPort")];
   dataPath = data[vars.indexOf("dataPath")];
-
+  str_connecting = data[vars.indexOf("str_connecting")];
+  str_waiting = data[vars.indexOf("str_waiting")];
+  str_searching = data[vars.indexOf("str_searching")];
+  str_no_results = data[vars.indexOf("str_no_results")];
+  str_loading = data[vars.indexOf("str_loading")];
+  
   // ints
   windowWidth = Integer.parseInt(data[vars.indexOf("windowWidth")]);
   windowHeight = Integer.parseInt(data[vars.indexOf("windowHeight")]);
@@ -93,6 +108,7 @@ void parsePreferences(String[] data) {
   fadeSpeed = Integer.parseInt(data[vars.indexOf("fadeSpeed")]);
   columns = Integer.parseInt(data[vars.indexOf("columns")]);
   rows = Integer.parseInt(data[vars.indexOf("rows")]);
+  standby_font_size = Integer.parseInt(data[vars.indexOf("standby_font_size")]);
 
   // floats
   xMargin = Float.parseFloat(data[vars.indexOf("xMargin")]);
