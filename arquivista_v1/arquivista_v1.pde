@@ -48,6 +48,9 @@ int standby_font_size = 20;
 
 // --------------------------------- VARS ---------------------------------- //
 
+// Setup
+boolean gotPath = false;
+
 // Visuals
 PGraphics imgBuffer;
 int fade = 0;
@@ -103,6 +106,9 @@ PGraphics exportRender;
 
 
 
+
+
+
 // ========================================================================= //
 
 
@@ -152,9 +158,16 @@ void setup() {
     println("no arduino connected");
   }
 
+  // get database path
   if(!autoloadDatabase) {
-    selectFolder("where is the database?", "selectDataPath");    
+    selectFolder("where is the database?", "selectDataPath");
+  } else {
+    gotPath = true;
   }
+  while(!gotPath) {
+    delay(100);
+  }
+
 
   cp5 = new ControlP5(this);
   font = loadFont("NotoSans-12.vlw");
@@ -308,6 +321,7 @@ void selectDataPath(File selection) {
   } else {
     dataPath = selection.getAbsolutePath() + "/";
     println("loading database from " + dataPath);
+    gotPath = true;
   }
 }
 
