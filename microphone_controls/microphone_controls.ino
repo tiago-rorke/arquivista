@@ -2,7 +2,9 @@
 #include <LiquidCrystal_I2C.h>
 #include "portuguese_chars.h"
 
-LiquidCrystal_I2C lcd(0x3F, 16, 2);
+#define COLS  20  // LCD columns
+#define ROWS  4   // LCD rows
+LiquidCrystal_I2C lcd(0x27, COLS, ROWS);
 
 #if defined(ARDUINO) && ARDUINO >= 100
 #define printByte(args)  write(args);
@@ -93,44 +95,34 @@ void loop() {
   
   if (stringComplete) {
     switch(inString.charAt(0)) {   
-      case 'W': {
-          // search word (line 1)
-          inString = inString.substring(1);
-          inString.trim();
-          if(inString.length() > 16) {
-            inString = inString.substring(inString.length() - 16);
-          }
-          lcd.setCursor(0,0);
-          lcd.print("                "); // clear the line
-          int x = 0;
-          int i = 0;
-          for(int h = 0; h < inString.length(); h++) {
-            lcd.setCursor(x,0);
-            x += print_char(inString.charAt(h), &i);
-          }
-          // pad with whitespace, does not see to be neccessary
-          /*while (x < 16) {
-            lcd.print(' ');
-            x++;
-          }*/
-        } break;
-
+      case 'W':
       case 'M': {
           // message (line 2)
           inString = inString.substring(1);
           inString.trim();
-          if(inString.length() > 16) {
-            inString = inString.substring(inString.length() - 16);
+          int max = COLS*(ROWS-1);
+          if(inString.length() > max) {
+            inString = inString.substring(inString.length() - max);
           }
-          lcd.setCursor(0,1);
-          lcd.print("                "); // clear the line
+          for(int j=0; j<ROWS-1; j++) { // clear the lines
+            for(int h=0; h<COLS; h++) {
+              lcd.setCursor(h,j);
+              lcd.print(' ');
+            }
+          }
           int x = 0;
+          int y = 0;
           int i = 0;
           for(int h = 0; h < inString.length(); h++) {
-            lcd.setCursor(x,1);
+            lcd.setCursor(x, y);
             x += print_char(inString.charAt(h), &i);
-            if(x >= 16)
+            if(x >= COLS) {
+              x = 0;
+              y++;
+            }
+            if(y >= ROWS-1) {
               break;
+            }
           }
         } break;
 
@@ -140,9 +132,11 @@ void loop() {
           String ps = inString.substring(i+1);
           n = ns.toInt();
           p = ps.toInt();
-          lcd.setCursor(0,1);
-          lcd.print("                "); // clear the line
-          lcd.setCursor(0,1);
+          for(int h=0; h<COLS; h++) {// clear the line
+            lcd.setCursor(h,ROWS-1);
+            lcd.print(' ');
+          }
+          lcd.setCursor(0,ROWS-1);
           lcd.print(n);
           lcd.print(" / ");
           lcd.print(p);
@@ -156,6 +150,8 @@ void loop() {
 
 
 int print_char(char in_char, int* i) {
+
+  //Serial.println(in_char, HEX);  // debugging char hex codes
 
   switch(byte(in_char)) {
 
