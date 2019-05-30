@@ -94,10 +94,29 @@ void loop() {
   }
   
   if (stringComplete) {
-    switch(inString.charAt(0)) {   
-      case 'W':
+    switch(inString.charAt(0)) {
+
       case 'M': {
-          // message (line 2)
+          // UI message
+          inString = inString.substring(1);
+          inString.trim();
+          for(int h=0; h<COLS; h++) {
+            lcd.setCursor(h, ROWS-1);
+            lcd.print(' ');
+          }
+          int x = 0;
+          int i = 0;
+          for(int h = 0; h < inString.length(); h++) {
+            lcd.setCursor(x, ROWS-1);
+            x += print_char(inString.charAt(h), &i);
+            if(x >= COLS) {
+              break;
+            }
+          }
+        } break;
+
+      case 'W': {
+          // search terms
           inString = inString.substring(1);
           inString.trim();
           int max = COLS*(ROWS-1);

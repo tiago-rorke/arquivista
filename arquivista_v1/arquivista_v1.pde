@@ -414,12 +414,10 @@ void updateSearch() {
     updateBuffer();
     
     if(imageIDs.size() > 0 ) {
-      searchLabel.setText(allSearchTerms() + page + " of " + numPages + " (" + imageIDs.size() + ")");
+      searchLabel.setText(allSearchTerms() + " " + page + " of " + numPages + " (" + imageIDs.size() + ")");
       updateLCD_pages();
-      updateLCD_word(allSearchTerms());
     } else {
       searchLabel.setText(allSearchTerms() + str_no_results);
-      updateLCD_word(allSearchTerms());
       updateLCD_msg(str_no_results);
     }
   }
@@ -647,7 +645,7 @@ void updateLCD_pages() {
 void updateLCD_word(String searchStrings) {
   if(useArduino) {
     arduino.write("W");
-    arduino.write(searchStrings);
+    sendString(arduino, searchStrings);
     arduino.write('\n');
   }
 }
@@ -655,7 +653,97 @@ void updateLCD_word(String searchStrings) {
 void updateLCD_msg(String msg) {
   if(useArduino) {
     arduino.write("M");
-    arduino.write(msg);  
+    sendString(arduino, msg);
     arduino.write('\n');
+  }
+}
+
+// needed to add this switch/case to catch the accented chars, 
+// due to some encoding issues with the serial comms on the raspberry pi
+
+void sendString(Serial port, String s) { 
+
+  for(int i=0; i< s.length(); i++) {
+    char a = s.charAt(i);
+    
+    switch(a) {
+
+      case 'à': 
+        port.write(0xA0);
+        break;
+      case 'á': 
+        port.write(0xA1);
+        break;
+      case 'â': 
+        port.write(0xA2);
+        break;
+      case 'ã': 
+        port.write(0xA3);
+        break;
+      case 'ç': 
+        port.write(0xA7);
+        break;
+      case 'é': 
+        port.write(0xA9);
+        break;
+      case 'ê': 
+        port.write(0xAA);
+        break;
+      case 'í': 
+        port.write(0xAD);
+        break;
+      case 'ó': 
+        port.write(0xB3);
+        break;
+      case 'ô': 
+        port.write(0xB4);
+        break;
+      case 'õ': 
+        port.write(0xB5);
+        break;
+      case 'ú': 
+        port.write(0xBA);
+        break;
+      case 'À': 
+        port.write(0x80);
+        break;
+      case 'Á': 
+        port.write(0x81);
+        break;
+      case 'Â': 
+        port.write(0x82);
+        break;
+      case 'Ã': 
+        port.write(0x83);
+        break;
+      case 'Ç': 
+        port.write(0x87);
+        break;
+      case 'É': 
+        port.write(0x89);
+        break;
+      case 'Ê': 
+        port.write(0x8A);
+        break;
+      case 'Í': 
+        port.write(0x8D);
+        break;
+      case 'Ó': 
+        port.write(0x93);
+        break;
+      case 'Ô': 
+        port.write(0x94);
+        break;
+      case 'Õ': 
+        port.write(0x95);
+        break;
+      case 'Ú': 
+        port.write(0x9A);
+        break;
+
+      default:
+        port.write(a);
+        break;
+    }
   }
 }
