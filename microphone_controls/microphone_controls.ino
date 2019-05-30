@@ -90,6 +90,7 @@ void loop() {
     inString += inChar;
     if (inChar == '\n') { // read string until newline character
       stringComplete = true;
+      break;
     }
   }
   
