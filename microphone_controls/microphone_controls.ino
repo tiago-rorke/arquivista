@@ -120,30 +120,9 @@ void loop() {
           // search terms
           inString = inString.substring(1);
           inString.trim();
-          int max = COLS*(ROWS-1);
-          if(inString.length() > max) {
-            inString = inString.substring(inString.length() - max);
-          }
-          for(int j=0; j<ROWS-1; j++) { // clear the lines
-            for(int h=0; h<COLS; h++) {
-              lcd.setCursor(h,j);
-              lcd.print(' ');
-            }
-          }
-          int x = 0;
-          int y = 0;
-          int i = 0;
-          for(int h = 0; h < inString.length(); h++) {
-            lcd.setCursor(x, y);
-            x += print_char(inString.charAt(h), &i);
-            if(x >= COLS) {
-              x = 0;
-              y++;
-            }
-            if(y >= ROWS-1) {
-              break;
-            }
-          }
+          inString = fitLines(false, inString);
+          clearLines();
+          fitLines(true, inString);
         } break;
 
       case 'N':  { // pages
@@ -169,170 +148,223 @@ void loop() {
 }
 
 
+void clearLines() {
+  for(int j=0; j<ROWS-1; j++) { // clear the lines
+    for(int h=0; h<COLS; h++) {
+      lcd.setCursor(h,j);
+      lcd.print(' ');
+    }
+  }
+}
+
+String fitLines(boolean send, String s) {
+  int max = COLS*(ROWS-1);
+  if(inString.length() > max) {
+    inString = inString.substring(inString.length() - max);
+  }
+  int x = 0;
+  int y = 0;
+  int i = 0;
+  int m = 0;
+  for(int h = 0; h < s.length(); h++) {
+    lcd.setCursor(x, y);
+    x += print_char(s.charAt(h), &i, send);
+    if(x >= COLS) {
+      while(s.charAt(h) != ' ') {
+        h--;
+        x--;
+        m++;
+        lcd.setCursor(x,y);
+        lcd.print(' ');
+        if(!send && s.length() + m > max) {
+          s = s.substring(1);
+          x = 0;
+          y = 0;
+          h = 0;
+          m = 0;
+        }
+      }
+      x = 0;
+      y++;
+    }
+    if(y >= ROWS-1) {
+      break;
+    }
+  }
+  return s;
+}
+
 int print_char(char in_char, int* i) {
+  print_char(in_char, *i, true);
+}
+
+int print_char(char in_char, int* i, boolean send) {
 
   //Serial.println(in_char, HEX);  // debugging char hex codes
 
-  switch(byte(in_char)) {
+  if(byte(in_char) == 0xC3) {
+    return 0;
+  } else if(send) {
 
-    case 0xC3:
-      return 0;
-    
-    case 0xA0: // à - a_grave
-      lcd.printByte(*i);
-      lcd.createChar(*i, a_grave);
-      break;
+    switch(byte(in_char)) {
 
-    case 0xA1: // á - a_acute
-      lcd.printByte(*i);
-      lcd.createChar(*i, a_acute);
-      break;
+      
+      case 0xA0: // à - a_grave
+        lcd.printByte(*i);
+        lcd.createChar(*i, a_grave);
+        break;
 
-    case 0xA2: // â - a_circum
-      lcd.printByte(*i);
-      lcd.createChar(*i, a_circum);
-      break;
+      case 0xA1: // á - a_acute
+        lcd.printByte(*i);
+        lcd.createChar(*i, a_acute);
+        break;
 
-    case 0xA3: // ã - a_tilde
-      lcd.printByte(*i);
-      lcd.createChar(*i, a_tilde);
-      break;
+      case 0xA2: // â - a_circum
+        lcd.printByte(*i);
+        lcd.createChar(*i, a_circum);
+        break;
 
-    case 0xA7: // ç - c_cedilha
-      lcd.printByte(*i);
-      lcd.createChar(*i, c_cedilha);
-      break;
+      case 0xA3: // ã - a_tilde
+        lcd.printByte(*i);
+        lcd.createChar(*i, a_tilde);
+        break;
 
-    case 0xA9: // é - e_acute
-      lcd.printByte(*i);
-      lcd.createChar(*i, e_acute);
-      break;
+      case 0xA7: // ç - c_cedilha
+        lcd.printByte(*i);
+        lcd.createChar(*i, c_cedilha);
+        break;
 
-    case 0xAA: // ê - e_circum
-      lcd.printByte(*i);
-      lcd.createChar(*i, e_circum);
-      break;
+      case 0xA9: // é - e_acute
+        lcd.printByte(*i);
+        lcd.createChar(*i, e_acute);
+        break;
 
-    case 0xAD: // í - i_acute
-      lcd.printByte(*i);
-      lcd.createChar(*i, i_acute);
-      break;
+      case 0xAA: // ê - e_circum
+        lcd.printByte(*i);
+        lcd.createChar(*i, e_circum);
+        break;
 
-    case 0xB3: // ó - o_acute
-      lcd.printByte(*i);
-      lcd.createChar(*i, o_acute);
-      break;
+      case 0xAD: // í - i_acute
+        lcd.printByte(*i);
+        lcd.createChar(*i, i_acute);
+        break;
 
-    case 0xB4: // ô - o_circum
-      lcd.printByte(*i);
-      lcd.createChar(*i, o_circum);
-      break;
+      case 0xB3: // ó - o_acute
+        lcd.printByte(*i);
+        lcd.createChar(*i, o_acute);
+        break;
 
-    case 0xB5: // õ - o_tilde
-      lcd.printByte(*i);
-      lcd.createChar(*i, o_tilde);
-      break;
+      case 0xB4: // ô - o_circum
+        lcd.printByte(*i);
+        lcd.createChar(*i, o_circum);
+        break;
 
-    case 0xBA: // ú - u_acute
-      lcd.printByte(*i);
-      lcd.createChar(*i, u_acute);
-      break;
+      case 0xB5: // õ - o_tilde
+        lcd.printByte(*i);
+        lcd.createChar(*i, o_tilde);
+        break;
 
-    case 0x80: // À - A_grave
-      lcd.printByte(*i);
-      lcd.createChar(*i, A_grave);
-      break;
+      case 0xBA: // ú - u_acute
+        lcd.printByte(*i);
+        lcd.createChar(*i, u_acute);
+        break;
 
-    case 0x81: // Á - A_acute
-      lcd.printByte(*i);
-      lcd.createChar(*i, A_acute);
-      break;
+      case 0x80: // À - A_grave
+        lcd.printByte(*i);
+        lcd.createChar(*i, A_grave);
+        break;
 
-    case 0x82: // Â - A_circum
-      lcd.printByte(*i);
-      lcd.createChar(*i, A_circum);
-      break;
+      case 0x81: // Á - A_acute
+        lcd.printByte(*i);
+        lcd.createChar(*i, A_acute);
+        break;
 
-    case 0x83: // Ã - A_tilde
-      lcd.printByte(*i);
-      lcd.createChar(*i, A_tilde);
-      break;
+      case 0x82: // Â - A_circum
+        lcd.printByte(*i);
+        lcd.createChar(*i, A_circum);
+        break;
 
-    case 0x87: // Ç - C_cedilha
-      lcd.printByte(*i);
-      lcd.createChar(*i, C_cedilha);
-      break;
+      case 0x83: // Ã - A_tilde
+        lcd.printByte(*i);
+        lcd.createChar(*i, A_tilde);
+        break;
 
-    case 0x89: // É - E_acute
-      lcd.printByte(*i);
-      lcd.createChar(*i, E_acute);
-      break;
+      case 0x87: // Ç - C_cedilha
+        lcd.printByte(*i);
+        lcd.createChar(*i, C_cedilha);
+        break;
 
-    case 0x8A: // Ê - E_circum
-      lcd.printByte(*i);
-      lcd.createChar(*i, E_circum);
-      break;
+      case 0x89: // É - E_acute
+        lcd.printByte(*i);
+        lcd.createChar(*i, E_acute);
+        break;
 
-    case 0x8D: // Í - I_acute
-      lcd.printByte(*i);
-      lcd.createChar(*i, I_acute);
-      break;
+      case 0x8A: // Ê - E_circum
+        lcd.printByte(*i);
+        lcd.createChar(*i, E_circum);
+        break;
 
-    case 0x93: // Ó - O_acute
-      lcd.printByte(*i);
-      lcd.createChar(*i, O_acute);
-      break;
+      case 0x8D: // Í - I_acute
+        lcd.printByte(*i);
+        lcd.createChar(*i, I_acute);
+        break;
 
-    case 0x94: // Ô - O_circum
-      lcd.printByte(*i);
-      lcd.createChar(*i, O_circum);
-      break;
+      case 0x93: // Ó - O_acute
+        lcd.printByte(*i);
+        lcd.createChar(*i, O_acute);
+        break;
 
-    case 0x95: // Õ - O_tilde
-      lcd.printByte(*i);
-      lcd.createChar(*i, O_tilde);
-      break;
+      case 0x94: // Ô - O_circum
+        lcd.printByte(*i);
+        lcd.createChar(*i, O_circum);
+        break;
 
-    case 0x9A: // Ú - U_acute
-      lcd.printByte(*i);
-      lcd.createChar(*i, U_acute);
-      break;
-    
-    default:
-      //Serial.println(in_char);
-      lcd.print(in_char);
-      break;
+      case 0x95: // Õ - O_tilde
+        lcd.printByte(*i);
+        lcd.createChar(*i, O_tilde);
+        break;
 
-  }
+      case 0x9A: // Ú - U_acute
+        lcd.printByte(*i);
+        lcd.createChar(*i, U_acute);
+        break;
+      
+      default:
+        //Serial.println(in_char);
+        lcd.print(in_char);
+        break;
 
-  switch(byte(in_char)) {
-    case 0xA0:
-    case 0xA1:
-    case 0xA2:
-    case 0xA3:
-    case 0xA7:
-    case 0xA9:
-    case 0xAA:
-    case 0xAD:
-    case 0xB3:
-    case 0xB4:
-    case 0xB5:
-    case 0xBA:
-    case 0x80:
-    case 0x81:
-    case 0x82:
-    case 0x83:
-    case 0x87:
-    case 0x89:
-    case 0x8A:
-    case 0x8D:
-    case 0x93:
-    case 0x94:
-    case 0x95:
-    case 0x9A:
-      *i += 1; // for some reason, ++ doesn't work here ?!
-      if(*i>7) *i=7;
-      break;
+    }
+
+    switch(byte(in_char)) {
+      case 0xA0:
+      case 0xA1:
+      case 0xA2:
+      case 0xA3:
+      case 0xA7:
+      case 0xA9:
+      case 0xAA:
+      case 0xAD:
+      case 0xB3:
+      case 0xB4:
+      case 0xB5:
+      case 0xBA:
+      case 0x80:
+      case 0x81:
+      case 0x82:
+      case 0x83:
+      case 0x87:
+      case 0x89:
+      case 0x8A:
+      case 0x8D:
+      case 0x93:
+      case 0x94:
+      case 0x95:
+      case 0x9A:
+        *i += 1; // for some reason, ++ doesn't work here ?!
+        if(*i>7) *i=7;
+        break;
+    }
   }
 
   return 1;
