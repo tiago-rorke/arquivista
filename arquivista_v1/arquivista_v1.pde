@@ -6,6 +6,9 @@ import java.util.*;
 import javax.swing.JOptionPane;
 import java.awt.FileDialog;
 
+import java.io.FileWriter;
+import java.io.*;
+
 
 // ----------------------------- PREFERENCES ------------------------------- //
 
@@ -101,9 +104,10 @@ int exportHeight;
 boolean export = false;
 PGraphics exportRender;
 
-
-
-
+// Logs
+FileWriter logWriter;
+BufferedWriter logBuffer;
+File log;
 
 
 // ========================================================================= //
@@ -165,6 +169,7 @@ void setup() {
     delay(100);
   }
 
+  // init logs
 
   cp5 = new ControlP5(this);
   font = loadFont("NotoSans-12.vlw");
@@ -211,7 +216,13 @@ void setup() {
 
   xm = xMargin*width;
   ym = yMargin*width;
+  singleView = true;
   setupLayout();
+  println("high-res image render width = " + photoWidth);
+  singleView = false;
+  setupLayout();
+  println("low-res image render width = " + photoWidth);
+  println();
 
   standby_font = loadFont("font.vlw");
   textFont(standby_font);
@@ -369,6 +380,7 @@ void toggleSingleView() {
 }
 
 
+
 // -------------------------------- SEARCH --------------------------------- //
 
 
@@ -392,6 +404,8 @@ void search(String searchString) {
   updateLCD_word(allSearchTerms());
   updateLCD_msg(str_searching);
   newSearch = true;
+
+  logString(allSearchTerms());
 }
  
 
@@ -467,8 +481,6 @@ void setupLayout() {
   ys = (height - 2*ym)/nr;
   photoWidth = xs * (1-padding);
 
-  println("image render width = " + photoWidth);
-  println();
 }
 
 
@@ -476,9 +488,11 @@ void loadImages(boolean highRes) {
 
   for(int i=0; i<imagesOnScreen(); i++) {
     int id = imageIDs.get(i + (page-1) * nr * nc);
-    if(highRes) {
-      println("loading image " + (i+1));
-      images[i] = loadImage(dataPath + "image_highres/" + filenames[id] + ".jpg");
+    if(highRes || singleView) {
+      if(highRes) {
+        println("loading image " + (i+1));
+      }
+      images[i] = loadImage(dataPath + "images_highres/" + filenames[id] + ".jpg");
     } else {
       images[i] = loadImage(dataPath + "images_lowres/" + filenames[id] + ".jpg");
     }
@@ -625,6 +639,29 @@ void serialEvent(Serial port) {
     }
   }
   
+}
+
+
+// --------------------------------- LOGS ---------------------------------- //
+
+void logString(String s) {
+  try {
+    String dateStamp = nf(year(),4) + "-" + nf(month(),2) + "-" + nf(day(),2);
+    log = new File(dataPath + "/logs/" + dateStamp + ".txt");
+    logWriter = new FileWriter(log, true); // true = append
+    logBuffer = new BufferedWriter(logWriter);
+    if (!log.exists()) {
+      log.createNewFile();
+    }
+    PrintWriter pw = new PrintWriter(logBuffer);
+    String timestamp = nf(hour(),2) + ":" + nf(minute(),2) + ":" + nf(second(),2);
+    pw.write(timestamp + '\t' + s + '\n');
+    pw.close();
+  }
+  catch(IOException ioe) {
+    System.out.println("Exception ");
+    ioe.printStackTrace();
+  }
 }
 
 

@@ -16,7 +16,7 @@ LiquidCrystal_I2C lcd(0x27, COLS, ROWS);
 #define LOCK  12  // yellow
 #define PTT   11  // green
 #define RIGHT 10  // blue    // up
-#define FAST  9   // purple  // not in use but connected
+#define FAST  9   // purple  // toggle single image view
 #define LEFT  8   // grey    // down
 
 DebouncedInput lock;
@@ -195,7 +195,7 @@ String fitLines(boolean send, String s) {
 }
 
 int print_char(char in_char, int* i) {
-  print_char(in_char, *i, true);
+  return print_char(in_char, *i, true);
 }
 
 int print_char(char in_char, int* i, boolean send) {
