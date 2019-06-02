@@ -27,7 +27,7 @@ int fadeinInterval = 200; // interval in milliseconds between triggering word ch
 int fadeinSpeed = 50;
 int fadeoutInterval = 10;
 int fadeoutSpeed = 150;
-int fadeout_delay = 1000; // also the exit delay
+long fadeout_delay = 1000; // also the exit delay
 
 // state flags
 boolean done = false;     // all words are visible
@@ -188,8 +188,8 @@ void initialise() {
     
     float a = textWidth(words[i]);  // get width of current word
     x += word_spacing + a;          // increment x position accordingly for next word
-    num_words = i;
     i++;                            // increment word index
+    num_words = i;
 
     // stop if we reach the end of the word list
     if(i >= word_list.length) {
@@ -200,7 +200,7 @@ void initialise() {
     float b = textWidth(word_list[i]);
 
     // check if we have reached the end of the line or not
-    if(x + word_spacing + b > w) {
+    if(x + word_spacing + b > w + margin_xl) {
 
       float r = w + margin_xl - (x - word_spacing);  // if we have, get the size of the remaining space on the line
       r /= i - (i2+1);                               // divide by one less than the number of words on the line
