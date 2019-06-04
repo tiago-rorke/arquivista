@@ -40,6 +40,7 @@ String str_connecting = "connecting...";
 String str_waiting = "waiting for word";
 String str_searching = "(searching...)";
 String str_no_results = "(no results)";
+String str_listening = "(listening...)";
 String str_loading = "loading..."; // also hardcoded on arduino
 
 int standby_font_size = 20;
@@ -618,6 +619,7 @@ void serialEvent(Serial port) {
       case 'S':
         if(s.charAt(1) == 'E') { // start listening
           ws.sendMessage("start");
+          updateLCD_msg(str_listening);
           cp5.setColorBackground(color(#6F0108));
         }
         if(s.charAt(1) == 'D') { // stop listening

@@ -37,6 +37,7 @@ void keyPressed() {
       }
       if(key == ' ') {
         ws.sendMessage("start");
+        updateLCD_msg(str_listening);
         cp5.setColorBackground(color(#6F0108));  // red textbox
       }
     }
