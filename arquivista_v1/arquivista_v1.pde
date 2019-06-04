@@ -278,9 +278,9 @@ void draw() {
     fill(standby_fill);
     text(str_waiting, width/2, height/2);
     if(standby_pulse_in) {
-      standby_fill++;
+      standby_fill += standby_pulse_speed;
     } else {
-      standby_fill--;
+      standby_fill -= standby_pulse_speed;
     }
     if(standby_fill >= 255) {
       standby_pulse_in = false;

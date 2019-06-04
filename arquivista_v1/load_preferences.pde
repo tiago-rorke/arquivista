@@ -37,6 +37,8 @@ void savePreferences() {
     "",
     "// standby timeout is in seconds",
     "standbyTimeout=" + standbyTimeout,
+    "standby_font_size=" + 20,
+    "standby_pulse_speed=" +  15,
     "",
     "// messages",
     "str_connecting=" + "connecting...",
@@ -44,8 +46,6 @@ void savePreferences() {
     "str_searching=" + "(searching...)",
     "str_listening=" + "(listening...)",
     "str_no_results=" + "(no results)",
-    "standby_font_size=" + 20,
-    "standby_pulse_speed=" +  15,
     "// loading message also in arduino code",    
     "str_loading=" + "loading...",
     ""
