@@ -46,6 +46,8 @@ String str_loading = "loading..."; // also hardcoded on arduino
 int standby_font_size = 20;
 int standby_pulse_speed = 15;
 
+int stop_talk_delay = 500;
+
 
 // --------------------------------- VARS ---------------------------------- //
 
@@ -639,6 +641,7 @@ void serialEvent(Serial port) {
           cp5.setColorBackground(color(#6F0108));
         }
         if(s.charAt(1) == 'D') { // stop listening
+          delay(stop_talk_delay);
           ws.sendMessage("stop");
           updateTextboxColor();
         }
