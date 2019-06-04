@@ -44,6 +44,7 @@ String str_listening = "(listening...)";
 String str_loading = "loading..."; // also hardcoded on arduino
 
 int standby_font_size = 20;
+int standby_pulse_speed = 15;
 
 
 // --------------------------------- VARS ---------------------------------- //
@@ -64,6 +65,8 @@ boolean toStandby = false;
 boolean leaveStandby = false;
 long standbyTimer;
 PFont standby_font;
+int standby_fill = 0;
+boolean standby_pulse_in = true;
 
 // Metadata Tables
 int numImages;       // total number of images in collection
@@ -270,8 +273,19 @@ void draw() {
 
   imageMode(CORNER);
   if(standby) {
-    fill(255);
+    fill(standby_fill);
     text(str_waiting, width/2, height/2);
+    if(standby_pulse_in) {
+      standby_fill++;
+    } else {
+      standby_fill--;
+    }
+    if(standby_fill >= 255) {
+      standby_pulse_in = false;
+    }
+    if(standby_fill <= 0) {
+      standby_pulse_in = true;
+    }
   } else {
     image(imgBuffer,0,0);
   }

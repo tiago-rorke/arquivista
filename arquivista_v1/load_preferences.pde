@@ -42,8 +42,10 @@ void savePreferences() {
     "str_connecting=" + "connecting...",
     "str_waiting=" + "waiting for word",
     "str_searching=" + "(searching...)",
+    "str_listening=" + "(listening...)",
     "str_no_results=" + "(no results)",
     "standby_font_size=" + 20,
+    "standby_pulse_speed=" +  15,
     "// loading message also in arduino code",    
     "str_loading=" + "loading...",
     ""
@@ -98,6 +100,7 @@ void parsePreferences(String[] data) {
   str_connecting = data[vars.indexOf("str_connecting")];
   str_waiting = data[vars.indexOf("str_waiting")];
   str_searching = data[vars.indexOf("str_searching")];
+  str_listening = data[vars.indexOf("str_listening")];
   str_no_results = data[vars.indexOf("str_no_results")];
   str_loading = data[vars.indexOf("str_loading")];
   
@@ -109,6 +112,7 @@ void parsePreferences(String[] data) {
   columns = Integer.parseInt(data[vars.indexOf("columns")]);
   rows = Integer.parseInt(data[vars.indexOf("rows")]);
   standby_font_size = Integer.parseInt(data[vars.indexOf("standby_font_size")]);
+  standby_pulse_speed = Integer.parseInt(data[vars.indexOf("standby_pulse_speed")]);
 
   // floats
   xMargin = Float.parseFloat(data[vars.indexOf("xMargin")]);
