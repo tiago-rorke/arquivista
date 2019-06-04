@@ -173,14 +173,14 @@ void setup() {
     delay(100);
   }
 
-  // init logs
-
   cp5 = new ControlP5(this);
   font = loadFont("NotoSans-12.vlw");
   cp5.setFont(font);
   cp5.addTextfield("search").setPosition(20, height-40).getCaptionLabel().setVisible(false);   
   searchLabel = cp5.addTextlabel("searchLabel").setText("").setPosition(20, height-60);
   searchLabel.setText(str_loading);
+  cp5.get(Textfield.class,"search").setVisible(false);
+  searchLabel.setVisible(false);
 
   exportHeight = int(exportWidth*height/width);
 
