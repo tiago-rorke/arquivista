@@ -371,6 +371,7 @@ void pageRight() {
     page++;
     refresh = true;
     standbyTimer = millis();
+    updateLCD_pages();
   }
 }
 
@@ -379,6 +380,7 @@ void pageLeft() {
     page--;
     refresh = true;
     standbyTimer = millis();
+    updateLCD_pages();
   }
 }
 
