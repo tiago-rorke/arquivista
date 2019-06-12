@@ -127,6 +127,7 @@ void settings() {
 
 void setup() {
 
+  noCursor();
   
   if(alwaysOnTop) surface.setAlwaysOnTop(true);
 
