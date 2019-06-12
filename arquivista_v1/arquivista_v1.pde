@@ -235,7 +235,18 @@ void setup() {
   textAlign(CENTER, CENTER);
   textSize(standby_font_size);
 
-  if(autostartChrome) exec("chromium-browser");
+  //if(autostartChrome) exec("chromium-browser");
+  //exec("chromium-arquivista");
+  
+  if(autostartChrome) {
+    String[] env = {"PATH=/bin:/usr/bin/"};
+    ProcessBuilder pb = new ProcessBuilder(sketchPath() + "/../start_chrome.sh");
+    try {
+      Process p = pb.start();
+    } catch (IOException e) {
+      e.printStackTrace();
+    } 
+  }
 
   delay(2000);
   searchLabel.setText(str_connecting);
